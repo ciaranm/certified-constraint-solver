@@ -25,6 +25,9 @@ auto InputError::what() const noexcept -> const char *
 auto read_model(const string & filename) -> Model
 {
     ifstream infile{ filename };
+    if (! infile)
+        throw InputError{ "Error reading from '" + filename + "'" };
+
     string word;
 
     Model model;
