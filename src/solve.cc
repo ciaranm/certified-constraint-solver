@@ -8,7 +8,7 @@
 
 using std::string;
 
-auto search(Result & result, const Model & start_model) -> void
+auto search(int depth, Result & result, const Model & start_model) -> void
 {
     ++result.nodes;
     auto model = start_model;
@@ -31,7 +31,7 @@ auto search(Result & result, const Model & start_model) -> void
         branch_variable->values.clear();
         for (auto & v : possible_values) {
             branch_variable->values = {{ v }};
-            search(result, model);
+            search(depth + 1, result, model);
             if (! result.solution.empty())
                 return;
         }
@@ -43,7 +43,7 @@ auto search(Result & result, const Model & start_model) -> void
 auto solve(const Model & model) -> Result
 {
     Result result;
-    search(result, model);
+    search(0, result, model);
     return result;
 }
 
