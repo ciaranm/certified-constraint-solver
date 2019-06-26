@@ -8,6 +8,7 @@
 struct Variable
 {
     Variable(int lw, int ub);
+    Variable(const Variable &);
     ~Variable();
 
     std::set<int> values;

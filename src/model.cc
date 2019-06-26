@@ -5,6 +5,9 @@
 #include "constraint.hh"
 #include "result.hh"
 
+#include <memory>
+
+using std::make_shared;
 using std::shared_ptr;
 using std::string;
 using std::to_string;
@@ -21,7 +24,12 @@ auto ModelError::what() const noexcept -> const char *
 
 Model::Model() = default;
 
-Model::Model(const Model & other) = default;
+Model::Model(const Model & other) :
+    constraints(other.constraints)
+{
+    for (auto & [ n, v ] : other._vars)
+        _vars.emplace(n, make_shared<Variable>(*v));
+}
 
 Model::~Model() = default;
 

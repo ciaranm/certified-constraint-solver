@@ -10,3 +10,5 @@ Variable::Variable(int lw, int ub)
 
 Variable::~Variable() = default;
 
+Variable::Variable(const Variable &) = default;
+
