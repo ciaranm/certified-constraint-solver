@@ -1,0 +1,10 @@
+intvar x1 1 3
+intvar x2 1 3
+intvar x3 1 4
+createtable t1 3
+addtotable t1 1 1 1
+addtotable t1 1 1 2
+addtotable t1 2 1 3
+table t1 x1 x2 x3
+notequal x1 x2
+notequal x1 x3

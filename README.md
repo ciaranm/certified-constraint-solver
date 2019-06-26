@@ -26,6 +26,21 @@ intvar x2 1 3
 notequal x1 x2
 ```
 
+The solver also supports table constraints. A table can be reused multiple times.
+
+```
+intvar x1 0 1
+intvar x2 0 1
+intvar x3 0 1
+intvar x4 0 1
+createtable oneofthree 3
+addtotable oneofthree 1 0 0
+addtotable oneofthree 0 1 0
+addtotable oneofthree 0 0 1
+table oneofthree x1 x2 x3
+table oneofthree x2 x3 x4
+```
+
 Running
 -------
 
