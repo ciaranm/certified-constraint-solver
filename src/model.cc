@@ -5,9 +5,13 @@
 #include "constraint.hh"
 #include "result.hh"
 
+#include <map>
 #include <memory>
+#include <utility>
 
 using std::make_shared;
+using std::map;
+using std::pair;
 using std::shared_ptr;
 using std::string;
 using std::to_string;
@@ -69,5 +73,17 @@ auto Model::save_result(Result & result) const -> void
             throw ModelError{ "Variable '" + name + "' contains " + to_string(v->values.size()) + " values, but was expecting one" };
         result.solution.emplace(name, to_string(*v->values.begin()));
     }
+}
+
+auto Model::encode_as_opb(std::ostream & s, int & nb_vars, int & nb_constraints) const -> void
+{
+    map<pair<string, int>, int> vars_map;
+    for (auto & [ name, v ] : _vars)
+        v->encode_as_opb(name, s, vars_map, nb_constraints);
+
+    for (auto & c : constraints)
+        c->encode_as_opb(*this, s, vars_map, nb_constraints);
+
+    nb_vars = vars_map.size();
 }
 

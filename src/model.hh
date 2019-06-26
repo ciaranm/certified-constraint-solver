@@ -43,6 +43,8 @@ class Model
         auto save_result(Result &) const -> void;
 
         std::list<std::shared_ptr<Constraint> > constraints;
+
+        auto encode_as_opb(std::ostream &, int & nb_vars, int & nb_constraints) const -> void;
 };
 
 #endif

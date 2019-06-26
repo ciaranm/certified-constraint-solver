@@ -7,8 +7,11 @@
 #include "model-fwd.hh"
 
 #include <list>
+#include <map>
 #include <memory>
+#include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 struct Constraint
@@ -20,6 +23,8 @@ struct Constraint
     Constraint & operator= (const Constraint &) = delete;
 
     [[ nodiscard ]] virtual auto propagate(Model & model) const -> PropagationResult = 0;
+
+    virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void = 0;
 };
 
 class NotEqualConstraint : public Constraint
@@ -32,6 +37,7 @@ class NotEqualConstraint : public Constraint
         virtual ~NotEqualConstraint() override;
 
         virtual auto propagate(Model & model) const -> PropagationResult override;
+        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void override;
 };
 
 struct Table
@@ -56,6 +62,7 @@ class TableConstraint : public Constraint
         auto associate_with_variable(const std::string &) -> void;
 
         virtual auto propagate(Model & model) const -> PropagationResult override;
+        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void override;
 };
 
 #endif

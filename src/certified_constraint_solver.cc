@@ -11,9 +11,12 @@
 #include <cstdlib>
 #include <ctime>
 #include <exception>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 #include <unistd.h>
@@ -22,16 +25,21 @@ namespace po = boost::program_options;
 
 using std::boolalpha;
 using std::cerr;
+using std::copy;
 using std::cout;
 using std::endl;
 using std::exception;
 using std::function;
+using std::istreambuf_iterator;
 using std::localtime;
 using std::make_pair;
 using std::make_shared;
 using std::make_unique;
+using std::ofstream;
+using std::ostreambuf_iterator;
 using std::put_time;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 using std::chrono::duration_cast;
@@ -46,7 +54,9 @@ auto main(int argc, char * argv[]) -> int
     try {
         po::options_description display_options{ "Program options" };
         display_options.add_options()
-            ("help",                                         "Display help information");
+            ("help",                                         "Display help information")
+            ("write-opb-to",    po::value<string>(),         "Write the model, re-encoded in OPB format, to this file")
+            ;
 
         po::positional_options_description positional_options;
         positional_options
@@ -94,6 +104,24 @@ auto main(int argc, char * argv[]) -> int
         auto model = read_model(options_vars["model-file"].as<string>());
 
         cout << "model_file = " << options_vars["model-file"].as<string>() << endl;
+
+        if (options_vars.count("write-opb-to")) {
+            stringstream body;
+            int nb_vars = 0;
+            int nb_constraints = 0;
+
+            model.encode_as_opb(body, nb_vars, nb_constraints);
+
+            ofstream opb{ options_vars["write-opb-to"].as<string>() };
+            if (! opb) {
+                cerr << "Cannot write OBP model" << endl;
+                return EXIT_FAILURE;
+            }
+
+            opb << "* #variable= " << nb_vars << " #constraint= " << nb_constraints << endl;
+            copy(istreambuf_iterator<char>{ body }, istreambuf_iterator<char>{ },
+                    ostreambuf_iterator<char>{ opb });
+        }
 
         /* Start the clock */
         auto start_time = steady_clock::now();
