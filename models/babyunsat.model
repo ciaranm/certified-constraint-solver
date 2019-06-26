@@ -1,0 +1,10 @@
+intvar x1 1 3
+intvar x2 1 3
+intvar x3 1 3
+intvar x4 1 3
+notequal x1 x2
+notequal x1 x3
+notequal x1 x4
+notequal x2 x3
+notequal x2 x4
+notequal x3 x4
