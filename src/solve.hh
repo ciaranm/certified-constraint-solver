@@ -5,7 +5,8 @@
 
 #include "model-fwd.hh"
 #include "result-fwd.hh"
+#include "refutation_log.hh"
 
-auto solve(const Model & model) -> Result;
+auto solve(const Model & model, RefutationLog & ref, int nb_opb_vars, int nb_opb_constraints) -> Result;
 
 #endif

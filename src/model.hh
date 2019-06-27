@@ -7,6 +7,7 @@
 #include "variable-fwd.hh"
 #include "constraint-fwd.hh"
 #include "result-fwd.hh"
+#include "refutation_log.hh"
 
 #include <exception>
 #include <list>
@@ -44,7 +45,8 @@ class Model
 
         std::list<std::shared_ptr<Constraint> > constraints;
 
-        auto encode_as_opb(std::ostream &, int & nb_vars, int & nb_constraints) const -> void;
+        auto encode_as_opb(std::ostream &, int & nb_vars, int & nb_constraints, RefutationLog & log) const -> void;
+        auto write_ref_header(RefutationLog & log, int nb_vars, int nb_constraints) const -> void;
 };
 
 #endif

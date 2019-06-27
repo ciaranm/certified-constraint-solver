@@ -12,6 +12,7 @@
 #include <ctime>
 #include <exception>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -36,8 +37,11 @@ using std::make_pair;
 using std::make_shared;
 using std::make_unique;
 using std::ofstream;
+using std::ostream;
 using std::ostreambuf_iterator;
 using std::put_time;
+using std::ref;
+using std::reference_wrapper;
 using std::string;
 using std::stringstream;
 using std::vector;
@@ -56,6 +60,7 @@ auto main(int argc, char * argv[]) -> int
         display_options.add_options()
             ("help",                                         "Display help information")
             ("write-opb-to",    po::value<string>(),         "Write the model, re-encoded in OPB format, to this file")
+            ("write-ref-to",    po::value<string>(),         "Write an unsat proof in refpy format to this file")
             ;
 
         po::positional_options_description positional_options;
@@ -105,28 +110,39 @@ auto main(int argc, char * argv[]) -> int
 
         cout << "model_file = " << options_vars["model-file"].as<string>() << endl;
 
-        if (options_vars.count("write-opb-to")) {
-            stringstream body;
-            int nb_vars = 0;
-            int nb_constraints = 0;
-
-            model.encode_as_opb(body, nb_vars, nb_constraints);
-
-            ofstream opb{ options_vars["write-opb-to"].as<string>() };
-            if (! opb) {
-                cerr << "Cannot write OBP model" << endl;
-                return EXIT_FAILURE;
-            }
-
-            opb << "* #variable= " << nb_vars << " #constraint= " << nb_constraints << endl;
-            copy(istreambuf_iterator<char>{ body }, istreambuf_iterator<char>{ },
-                    ostreambuf_iterator<char>{ opb });
-        }
-
         /* Start the clock */
         auto start_time = steady_clock::now();
 
-        auto result = solve(model);
+        RefutationLog ref_log;
+        if (options_vars.count("write-ref-to")) {
+            ref_log = make_unique<RefutationLogData>(options_vars["write-ref-to"].as<string>());
+            if (! *ref_log->stream) {
+                cerr << "Cannot write REF file" << endl;
+                return EXIT_FAILURE;
+            }
+        }
+
+        int nb_opb_vars = 0;
+        int nb_opb_constraints = 0;
+        if (options_vars.count("write-opb-to") || options_vars.count("write-ref-to")) {
+            stringstream body;
+
+            model.encode_as_opb(body, nb_opb_vars, nb_opb_constraints, ref_log);
+
+            if (options_vars.count("write-opb-to")) {
+                ofstream opb{ options_vars["write-opb-to"].as<string>() };
+                if (! opb) {
+                    cerr << "Cannot write OBP model" << endl;
+                    return EXIT_FAILURE;
+                }
+
+                opb << "* #variable= " << nb_opb_vars << " #constraint= " << nb_opb_constraints << endl;
+                copy(istreambuf_iterator<char>{ body }, istreambuf_iterator<char>{ },
+                        ostreambuf_iterator<char>{ opb });
+            }
+        }
+
+        auto result = solve(model, ref_log, nb_opb_vars, nb_opb_constraints);
 
         /* Stop the clock. */
         auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);

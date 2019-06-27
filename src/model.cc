@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 
+using std::endl;
 using std::make_shared;
 using std::map;
 using std::pair;
@@ -75,15 +76,24 @@ auto Model::save_result(Result & result) const -> void
     }
 }
 
-auto Model::encode_as_opb(std::ostream & s, int & nb_vars, int & nb_constraints) const -> void
+auto Model::encode_as_opb(std::ostream & s, int & nb_vars, int & nb_constraints, RefutationLog & log) const -> void
 {
     map<pair<string, int>, int> vars_map;
     for (auto & [ name, v ] : _vars)
-        v->encode_as_opb(name, s, vars_map, nb_constraints);
+        v->encode_as_opb(name, s, vars_map, nb_constraints, log);
 
     for (auto & c : constraints)
-        c->encode_as_opb(*this, s, vars_map, nb_constraints);
+        c->encode_as_opb(*this, s, vars_map, nb_constraints, log);
 
     nb_vars = vars_map.size();
+
+    log->current_index += (2 * nb_vars);
+    log->vars_start_at(nb_constraints + 1);
+}
+
+auto Model::write_ref_header(RefutationLog & log, int nb_opb_vars, int nb_opb_constraints) const -> void
+{
+    *log->stream << "f " << nb_opb_constraints << " 0" << endl;
+    *log->stream << "l " << nb_opb_vars << " 0" << endl;
 }
 

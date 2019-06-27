@@ -5,6 +5,7 @@
 
 #include "constraint-fwd.hh"
 #include "model-fwd.hh"
+#include "refutation_log.hh"
 
 #include <list>
 #include <map>
@@ -22,22 +23,23 @@ struct Constraint
     Constraint(const Constraint &) = delete;
     Constraint & operator= (const Constraint &) = delete;
 
-    [[ nodiscard ]] virtual auto propagate(Model & model) const -> PropagationResult = 0;
+    [[ nodiscard ]] virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult = 0;
 
-    virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void = 0;
+    virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void = 0;
 };
 
 class NotEqualConstraint : public Constraint
 {
     private:
         std::string _first, _second;
+        std::map<int, int> _constraint_number;
 
     public:
         NotEqualConstraint(const std::string &, const std::string &);
         virtual ~NotEqualConstraint() override;
 
-        virtual auto propagate(Model & model) const -> PropagationResult override;
-        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void override;
+        virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult override;
+        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void override;
 };
 
 struct Table
@@ -54,6 +56,9 @@ class TableConstraint : public Constraint
         int _arity;
         std::vector<std::string> _vars;
         std::shared_ptr<const Table> _table;
+        std::map<std::vector<int>, int> _var_for_tuple;
+        std::map<std::vector<int>, int> _constraint_for_tuple;
+        int _must_have_one_constraint;
 
     public:
         explicit TableConstraint(const std::shared_ptr<const Table> &);
@@ -61,8 +66,8 @@ class TableConstraint : public Constraint
 
         auto associate_with_variable(const std::string &) -> void;
 
-        virtual auto propagate(Model & model) const -> PropagationResult override;
-        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints) const -> void override;
+        virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult override;
+        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void override;
 };
 
 #endif

@@ -1,0 +1,8 @@
+intvar y1 1 1
+intvar y2 1 2
+intvar y3 1 3
+intvar y4 3 3
+notequal y1 y2
+notequal y1 y3
+notequal y2 y3
+notequal y3 y4

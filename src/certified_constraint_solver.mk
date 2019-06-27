@@ -5,6 +5,7 @@ SOURCES := \
     certified_constraint_solver.cc \
     model.cc \
     read_model.cc \
+    refutation_log.cc \
     solve.cc \
     variable.cc
 
