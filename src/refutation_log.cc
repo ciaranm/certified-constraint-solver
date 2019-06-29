@@ -30,12 +30,28 @@ auto RefutationLogData::record_var_takes_at_least_one_value(const string & s, in
 
 auto RefutationLogData::why_not(const string & s, int v) const -> int
 {
-    return _why_not.find(pair{ s, v })->second;
+    for (auto n = _why_nots.rbegin() ; n != _why_nots.rend() ; ++n) {
+        auto w = n->find(pair{ s, v });
+        if (w != n->end())
+            return w->second;
+    }
+
+    return 0;
+}
+
+auto RefutationLogData::push_why_nots() -> void
+{
+    _why_nots.emplace_back();
+}
+
+auto RefutationLogData::pop_why_nots() -> void
+{
+    _why_nots.pop_back();
 }
 
 auto RefutationLogData::record_why_not(const string & s, int v, int c) -> void
 {
-    _why_not.emplace(pair{ s, v }, c);
+    _why_nots.back().emplace(pair{ s, v }, c);
 }
 
 auto RefutationLogData::record_var(const string & n, int v) -> void

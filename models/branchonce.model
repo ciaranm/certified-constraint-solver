@@ -1,0 +1,6 @@
+intvar a 1 2
+intvar b 1 2
+intvar c 1 2
+notequal a b
+notequal a c
+notequal b c

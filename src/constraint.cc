@@ -4,11 +4,14 @@
 #include "model.hh"
 #include "variable.hh"
 
+#include <set>
+
 using std::endl;
 using std::list;
 using std::map;
 using std::ostream;
 using std::pair;
+using std::set;
 using std::shared_ptr;
 using std::string;
 
@@ -26,74 +29,67 @@ NotEqualConstraint::~NotEqualConstraint() = default;
 
 auto NotEqualConstraint::propagate(Model & model, RefutationLog & log) const -> PropagationResult
 {
-    auto f = model.get_variable(_first);
-    auto s = model.get_variable(_second);
     bool changed = false;
 
-    if (f->values.size() == 1) {
-        auto s_cannot_be = *f->values.begin();
-        if (s->values.count(s_cannot_be)) {
-            s->values.erase(s_cannot_be);
-            changed = true;
-            if (log) {
-                // f must take a single value s_cannot_be. we know f must take
-                // at least one value...
-                *log->stream << "p " << log->var_takes_at_least_one_value(_first);
-                // and we know it cannot take any of the other values...
-                for (auto & v : f->original_values)
-                    if (v != s_cannot_be)
-                        *log->stream << " " << log->why_not(_first, v) << " +";
+    auto half_propagate = [&] (Variable & m, const string & my_name, Variable & o, const string & other_name) {
+        if (m.values.size() == 1) {
+            auto o_cannot_be = *m.values.begin();
+            if (o.values.count(o_cannot_be)) {
+                o.values.erase(o_cannot_be);
+                changed = true;
+                if (log) {
+                    // m must take a single value o_cannot_be. we know m must take
+                    // at least one value...
+                    set<int> conflicts;
+                    // and we know it cannot take any of the other values...
+                    for (auto & v : m.original_values)
+                        if (v != o_cannot_be)
+                            conflicts.insert(log->why_not(my_name, v));
 
-                // now s cannot take the value s_cannot_be
-                *log->stream << " " << _constraint_number.find(s_cannot_be)->second << " + 0" << endl;
-                ++log->current_index;
-                log->record_why_not(_second, s_cannot_be, log->current_index);
+                    // now o cannot take the value o_cannot_be
+                    *log->stream << "* not_equals means " << other_name << " can't take "
+                        << my_name << "'s only value " << o_cannot_be << endl;
+
+                    *log->stream << "p " << log->var_takes_at_least_one_value(my_name);
+                    for (auto & c : conflicts)
+                        *log->stream << " " << c << " +";
+                    *log->stream << " " << (conflicts.size() + 1) << " d";
+                    *log->stream << " " << _constraint_number.find(o_cannot_be)->second << " + 0" << endl;
+                    ++log->current_index;
+                    log->record_why_not(other_name, o_cannot_be, log->current_index);
+                }
             }
         }
-    }
+    };
 
-    if (s->values.size() == 1) {
-        auto f_cannot_be = *s->values.begin();
-        if (f->values.count(f_cannot_be)) {
-            f->values.erase(f_cannot_be);
-            changed = true;
-            if (log) {
-                // s must take a single value s_cannot_be. we know s must take
-                // at least one value...
-                *log->stream << "p " << log->var_takes_at_least_one_value(_second);
-                // and we know it cannot take any of the other values...
-                for (auto & v : s->original_values)
-                    if (v != f_cannot_be)
-                        *log->stream << " " << log->why_not(_second, v) << " +";
+    auto f = model.get_variable(_first);
+    auto s = model.get_variable(_second);
 
-                // now s cannot take the value s_cannot_be
-                *log->stream << " " << _constraint_number.find(f_cannot_be)->second << " + 0" << endl;
-                ++log->current_index;
-                log->record_why_not(_first, f_cannot_be, log->current_index);
-            }
-        }
-    }
+    half_propagate(*f, _first, *s, _second);
+    half_propagate(*s, _second, *f, _first);
 
     if (changed && (f->values.empty() || s->values.empty())) {
         if (log) {
             if (f->values.empty()) {
                 // we know f must take at least one value...
+                *log->stream << "* got domain wipeout on not_equals " << _first << " " << _second << endl;
                 *log->stream << "p " << log->var_takes_at_least_one_value(_first);
                 // and we have ruled out all of its values...
                 for (auto & v : f->original_values)
                     *log->stream << " " << log->why_not(_first, v) << " +";
                 *log->stream << " 0" << endl;
                 ++log->current_index;
-                *log->stream << "c " << log->current_index << " 0" << endl;
+                *log->stream << "c " << log->current_index << " 2 d 0" << endl;
                 ++log->current_index;
             }
             else {
-                // we know f must take at least one value...
+                // we know s must take at least one value...
+                *log->stream << "* got domain wipeout on not_equals " << _first << " " << _second << endl;
                 *log->stream << "p " << log->var_takes_at_least_one_value(_second);
                 // and we have ruled out all of its values...
                 for (auto & v : s->original_values)
                     *log->stream << " " << log->why_not(_second, v) << " +";
-                *log->stream << " 0" << endl;
+                *log->stream << " 2 d 0" << endl;
                 ++log->current_index;
             }
         }
@@ -165,7 +161,7 @@ auto TableConstraint::propagate(Model & model, RefutationLog & log) const -> Pro
             if (! _constraint_for_tuple.count(a))
                 continue;
 
-            *log->stream << "p " << _constraint_for_tuple.find(a)->second;
+            set<int> conflicts;
             // find a contradicting variable
             int contradicting_variable = 0;
             for (int i = 0 ; i < _table->arity ; ++i) {
@@ -174,7 +170,7 @@ auto TableConstraint::propagate(Model & model, RefutationLog & log) const -> Pro
                     continue;
 
                 contradicting_variable = i;
-                *log->stream << " " << log->why_not(_vars[i], a[i]) << " +";
+                conflicts.insert(log->why_not(_vars[i], a[i]));
                 break;
             }
 
@@ -183,11 +179,13 @@ auto TableConstraint::propagate(Model & model, RefutationLog & log) const -> Pro
                 if (i == contradicting_variable)
                     continue;
                 auto v = model.get_variable(_vars[i]);
-                *log->stream << " " << log->inverse_is_at_least_zero(_vars[i], a[i]) << " +";
+                conflicts.insert(log->inverse_is_at_least_zero(_vars[i], a[i]));
             }
 
-            // and round down
-            *log->stream << " " << _table->arity << " d 0" << endl;
+            *log->stream << "p " << _constraint_for_tuple.find(a)->second;
+            for (auto & c : conflicts)
+                *log->stream << " " << c << " +";
+            *log->stream << " " << conflicts.size() << " d 0" << endl;
             disabled.push_back(++log->current_index);
         }
         *log->stream << "p " << _must_have_one_constraint;

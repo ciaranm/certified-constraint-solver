@@ -5,6 +5,7 @@
 
 #include "refutation_log-fwd.hh"
 
+#include <list>
 #include <map>
 
 class RefutationLogData
@@ -12,7 +13,7 @@ class RefutationLogData
     private:
         std::map<std::pair<std::string, int>, int> _vars;
         std::map<std::string, int> _var_takes_at_least_one_value;
-        std::map<std::pair<std::string, int>, int> _why_not;
+        std::list<std::map<std::pair<std::string, int>, int> > _why_nots;
         int _vars_start_at;
 
     public:
@@ -28,6 +29,9 @@ class RefutationLogData
 
         auto var_takes_at_least_one_value(const std::string &) const -> int;
         auto record_var_takes_at_least_one_value(const std::string &, int) -> void;
+
+        auto push_why_nots() -> void;
+        auto pop_why_nots() -> void;
 
         auto why_not(const std::string &, int) const -> int;
         auto record_why_not(const std::string &, int, int) -> void;
