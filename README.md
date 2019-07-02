@@ -43,9 +43,26 @@ table oneofthree x2 x3 x4
 Running
 -------
 
+To run the solver:
+
 ```shell session
 ./certified_constraint_solver models/babysat.model
 ```
+
+To run the solver, and produce a proof of unsat (assuming the model actually is unsat):
+
+```shell session
+./certified_constraint_solver --prove models/babyunsat.model
+```
+
+This will write an equivalent pseudo-boolean model in OPB format to ``models/babyunsat.opb``, and a
+proof log to ``models/babyunsat.log``. These can then be verified using ``refpy``:
+
+```shell session
+refpy models/babyunsat.opb models/babyunsat.log
+```
+
+You can find refpy at https://github.com/StephanGocht/refpy/ .
 
 Funding Acknowledgements
 ------------------------
