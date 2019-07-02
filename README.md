@@ -1,10 +1,9 @@
 A Certified Constraint Solver
 =============================
 
-This is a very simple constraint programming solver whose main feature is (going to be, at some
-point) support for proof logging.  This is a research toy to try out a few new ideas, not serious
-code. It is not designed to have good performance, to be powerful, or to be something you would want
-to use for application purposes.
+This is a very simple constraint programming solver whose main feature is support for proof logging.
+This is a research toy to try out a few new ideas, not serious code. It is not designed to have good
+performance, to be powerful, or to be something you would want to use for application purposes.
 
 Please contact [Ciaran McCreesh](mailto:ciaran.mccreesh@glasgow.ac.uk) with any queries.
 
