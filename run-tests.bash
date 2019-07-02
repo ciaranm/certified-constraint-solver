@@ -86,5 +86,16 @@ if ! grep '^status = true$' <(./certified_constraint_solver models/reusetable.mo
     exit 1
 fi
 
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/alldiff.model --prove ) ; then
+        echo "alldiff unsat test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/alldiff.opb models/alldiff.log ; then
+        echo "alldiff refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/alldiff.opb models/alldiff.log
+fi
+
 true
 

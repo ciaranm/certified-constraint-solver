@@ -93,7 +93,7 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const
 auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
 {
     proof.model_stream() << "* not equals " << _first << " " << _second << endl;
-    auto w = model.get_variable(_second)->values;
+    auto & w = model.get_variable(_second)->values;
     for (auto & v : model.get_variable(_first)->values)
         if (w.count(v)) {
             proof.model_stream() << "-1 x" << proof.variable_value_mapping(_first, v)

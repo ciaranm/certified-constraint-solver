@@ -5,6 +5,7 @@
 #include "constraint.hh"
 #include "table_constraint.hh"
 #include "not_equals_constraint.hh"
+#include "all_different_constraint.hh"
 #include "variable.hh"
 
 #include <fstream>
@@ -97,6 +98,21 @@ auto read_model(const string & filename) -> Model
                     throw InputError{ "Bad arguments to '" + word + "' command" };
                 constraint->associate_with_variable(name);
             }
+            model.constraints.push_back(constraint);
+        }
+        else if (word == "alldifferent") {
+            int number;
+            if (! (infile >> number))
+                throw InputError{ "Bad arguments to '" + word + "' command" };
+
+            vector<string> vars;
+            for (int i = 0 ; i < number ; ++i) {
+                string var;
+                if (! (infile >> var))
+                    throw InputError{ "Bad arguments to '" + word + "' command" };
+                vars.push_back(var);
+            }
+            auto constraint = make_shared<AllDifferentConstraint>(move(vars));
             model.constraints.push_back(constraint);
         }
         else {

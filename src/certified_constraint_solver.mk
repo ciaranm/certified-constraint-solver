@@ -1,6 +1,7 @@
 TARGET := certified_constraint_solver
 
 SOURCES := \
+    all_different_constraint.cc \
     certified_constraint_solver.cc \
     constraint.cc \
     model.cc \
