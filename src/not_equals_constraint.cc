@@ -50,8 +50,8 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const
                     proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(my_name);
                     for (auto & c : conflicts)
                         proof->proof_stream() << " " << c << " +";
-                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d";
-                    proof->proof_stream() << " " << _constraint_number.find(o_cannot_be)->second << " + 0" << endl;
+                    proof->proof_stream() << " " << _constraint_number.find(o_cannot_be)->second << " +";
+                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d 0" << endl;
                     proof->next_proof_line();
                     proof->proved_var_not_equal_value(other_name, o_cannot_be, proof->last_proof_line());
                 }

@@ -72,7 +72,7 @@ auto Proof::write_header() -> void
 {
     proof_stream() << "refutation using f l p c 0" << endl;
 
-    _imp->opb_file << "* #variable = " << _imp->number_of_variables << " #constraint = " << _imp->model_constraints_line << endl;
+    _imp->opb_file << "* #variable= " << _imp->number_of_variables << " #constraint= " << _imp->model_constraints_line << endl;
      copy(istreambuf_iterator<char>{ _imp->opb_body_file }, istreambuf_iterator<char>{}, ostreambuf_iterator<char>{ _imp->opb_file });
 }
 
@@ -156,11 +156,6 @@ auto Proof::proved_var_not_equal_value(const std::string & v, int n, int l) -> v
     _imp->var_not_equal_value.back().emplace(pair{ v, n }, l);
 }
 
-auto Proof::guessing_var_not_equal_value(const std::string & v, int n) -> void
-{
-    _imp->var_not_equal_value.back().emplace(pair{ v, n }, line_for_var_takes_at_most_one_value(v));
-}
-
 auto Proof::line_for_var_takes_at_least_one_value(const std::string & n) -> int
 {
     return _imp->variable_takes_at_least_one_value.find(n)->second;
@@ -184,5 +179,10 @@ auto Proof::pop_context() -> void
 auto Proof::line_for_var_val_is_at_most_one(const std::string & n, int v) const -> int
 {
     return _imp->variable_axioms_start + 2 * _imp->vv_mapping.find(pair{ n, v })->second;
+}
+
+auto Proof::line_for_var_val_is_at_least_zero(const std::string & n, int v) const -> int
+{
+    return _imp->variable_axioms_start + 2 * _imp->vv_mapping.find(pair{ n, v })->second - 1;
 }
 

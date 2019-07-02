@@ -58,12 +58,12 @@ class Proof
 
         auto line_for_var_not_equal_value(const std::string &, int) -> int;
         auto proved_var_not_equal_value(const std::string &, int, int) -> void;
-        auto guessing_var_not_equal_value(const std::string &, int) -> void;
 
         auto line_for_var_takes_at_least_one_value(const std::string &) -> int;
         auto line_for_var_takes_at_most_one_value(const std::string &) -> int;
 
         auto line_for_var_val_is_at_most_one(const std::string &, int) const -> int;
+        auto line_for_var_val_is_at_least_zero(const std::string &, int) const -> int;
 };
 
 #endif

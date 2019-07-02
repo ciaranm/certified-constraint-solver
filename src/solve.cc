@@ -48,12 +48,21 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
             branch_variable->values = {{ v }};
 
             if (proof) {
-                proof->proof_stream() << "* guessing " << branch_variable_name << " = " << v << " at depth " << depth << endl;
+                proof->proof_stream() << "* guessing " << branch_variable_name << " = " << v << " at depth " << depth
+                    << ", associated variable is x" << proof->variable_value_mapping(branch_variable_name, v) << endl;
                 proof->push_context();
 
                 for (auto & w : *branch_variable->original_values)
-                    if (w != v)
-                        proof->guessing_var_not_equal_value(branch_variable_name, w);
+                    if (w != v) {
+                        proof->proof_stream() << "* our guess implies " << branch_variable_name << " /= " << w << endl;
+                        proof->proof_stream() << "p " << proof->line_for_var_takes_at_most_one_value(branch_variable_name);
+                        for (auto & x : *branch_variable->original_values)
+                            if (x != v && x != w)
+                                proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(branch_variable_name, x) << " +";
+                        proof->proof_stream() << " 0" << endl;
+                        proof->next_proof_line();
+                        proof->proved_var_not_equal_value(branch_variable_name, w, proof->last_proof_line());
+                    }
             }
 
             search(depth + 1, result, model, proof);

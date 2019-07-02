@@ -84,7 +84,7 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof) const ->
         for (auto & c : controls) {
             proof->proof_stream() << " " << c << " +";
         }
-        proof->proof_stream() << " 0" << endl;
+        proof->proof_stream() << " " << controls.size() << " d 0" << endl;
         proof->next_proof_line();
     }
 

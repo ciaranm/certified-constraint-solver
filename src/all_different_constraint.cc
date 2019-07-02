@@ -68,8 +68,8 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof) c
                     proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(_vars[i]);
                     for (auto & c : conflicts)
                         proof->proof_stream() << " " << c << " +";
-                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d";
-                    proof->proof_stream() << " " << _constraint_numbers.find(tuple{ _vars[i], _vars[j], j_cannot_be })->second << " + 0" << endl;
+                    proof->proof_stream() << " " << _constraint_numbers.find(tuple{ _vars[i], _vars[j], j_cannot_be })->second << " +";
+                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d 0" << endl;
                     proof->next_proof_line();
                     proof->proved_var_not_equal_value(_vars[j], j_cannot_be, proof->last_proof_line());
                 }
