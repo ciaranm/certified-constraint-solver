@@ -1,6 +1,8 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
+#include "config.hh"
 #include "model.hh"
+#include "proof.hh"
 #include "read_model.hh"
 #include "result.hh"
 #include "solve.hh"
@@ -12,15 +14,29 @@
 #include <ctime>
 #include <exception>
 #include <fstream>
-#include <functional>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <memory>
-#include <sstream>
+#include <optional>
 #include <vector>
 
 #include <unistd.h>
+
+#if defined(STD_FS_IS_EXPERIMENTAL)
+#  include <experimental/filesystem>
+#elif defined(STD_FS_IS_STD)
+#  include <filesystem>
+#elif defined(STD_FS_IS_BOOST)
+#  include <boost/filesystem.hpp>
+#endif
+
+#if defined(STD_FS_IS_EXPERIMENTAL)
+using std::experimental::filesystem::path;
+#elif defined(STD_FS_IS_STD)
+using std::filesystem::path;
+#elif defined(STD_FS_IS_BOOST)
+using boost::filesystem::path;
+#endif
 
 namespace po = boost::program_options;
 
@@ -30,20 +46,11 @@ using std::copy;
 using std::cout;
 using std::endl;
 using std::exception;
-using std::function;
-using std::istreambuf_iterator;
 using std::localtime;
-using std::make_pair;
-using std::make_shared;
-using std::make_unique;
-using std::ofstream;
-using std::ostream;
-using std::ostreambuf_iterator;
+using std::make_optional;
+using std::optional;
 using std::put_time;
-using std::ref;
-using std::reference_wrapper;
 using std::string;
-using std::stringstream;
 using std::vector;
 
 using std::chrono::duration_cast;
@@ -59,8 +66,9 @@ auto main(int argc, char * argv[]) -> int
         po::options_description display_options{ "Program options" };
         display_options.add_options()
             ("help",                                         "Display help information")
-            ("write-opb-to",    po::value<string>(),         "Write the model, re-encoded in OPB format, to this file")
-            ("write-ref-to",    po::value<string>(),         "Write an unsat proof in refpy format to this file")
+            ("prove",                                        "Produce an unsat proof")
+            ("write-opb-to",    po::value<string>(),         "Specify the proof model file (default: input file with .obp extension)")
+            ("write-ref-to",    po::value<string>(),         "Specify the proof log file (default: input file with .log extension)")
             ;
 
         po::positional_options_description positional_options;
@@ -113,36 +121,32 @@ auto main(int argc, char * argv[]) -> int
         /* Start the clock */
         auto start_time = steady_clock::now();
 
-        RefutationLog ref_log;
-        if (options_vars.count("write-ref-to")) {
-            ref_log = make_unique<RefutationLogData>(options_vars["write-ref-to"].as<string>());
-            if (! *ref_log->stream) {
-                cerr << "Cannot write REF file" << endl;
-                return EXIT_FAILURE;
+        optional<Proof> proof;
+        if (options_vars.count("prove")) {
+            path opb_file;
+            if (options_vars.count("write-opb-to"))
+                opb_file = options_vars["write-opb-to"].as<string>();
+            else {
+                opb_file = options_vars["model-file"].as<string>();
+                opb_file = opb_file.replace_extension(".opb");
             }
+
+            path log_file;
+            if (options_vars.count("write-ref-to"))
+                log_file = options_vars["write-ref-to"].as<string>();
+            else {
+                log_file = options_vars["model-file"].as<string>();
+                log_file = log_file.replace_extension(".log");
+            }
+
+#if defined(STD_FS_IS_BOOST)
+            proof = make_optional<Proof>(opb_file.string(), log_file.string());
+#else
+            proof = make_optional<Proof>(opb_file, log_file);
+#endif
         }
 
-        int nb_opb_vars = 0;
-        int nb_opb_constraints = 0;
-        if (options_vars.count("write-opb-to") || options_vars.count("write-ref-to")) {
-            stringstream body;
-
-            model.encode_as_opb(body, nb_opb_vars, nb_opb_constraints, ref_log);
-
-            if (options_vars.count("write-opb-to")) {
-                ofstream opb{ options_vars["write-opb-to"].as<string>() };
-                if (! opb) {
-                    cerr << "Cannot write OBP model" << endl;
-                    return EXIT_FAILURE;
-                }
-
-                opb << "* #variable= " << nb_opb_vars << " #constraint= " << nb_opb_constraints << endl;
-                copy(istreambuf_iterator<char>{ body }, istreambuf_iterator<char>{ },
-                        ostreambuf_iterator<char>{ opb });
-            }
-        }
-
-        auto result = solve(model, ref_log, nb_opb_vars, nb_opb_constraints);
+        auto result = solve(model, proof);
 
         /* Stop the clock. */
         auto overall_time = duration_cast<milliseconds>(steady_clock::now() - start_time);

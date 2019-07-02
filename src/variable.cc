@@ -1,56 +1,57 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include "variable.hh"
-#include "refutation_log.hh"
+#include "proof.hh"
 
+#include <list>
 #include <ostream>
 #include <string>
 
 using std::endl;
-using std::map;
+using std::list;
+using std::make_shared;
 using std::ostream;
 using std::pair;
+using std::set;
 using std::string;
 
 Variable::Variable(int lw, int ub)
 {
+    auto v = make_shared<set<int> >();
     for ( ; lw <= ub ; ++lw)
-        values.insert(lw);
-    original_values = values;
+        v->insert(lw);
+    original_values = v;
+    values = *v;
 }
 
 Variable::~Variable() = default;
 
 Variable::Variable(const Variable &) = default;
 
-auto Variable::encode_as_opb(const string & name, ostream & s, map<pair<string, int>, int> & vars_map,
-        int & nb_constraints, RefutationLog & log) const -> void
+auto Variable::start_proof(const string & name, Proof & proof) const -> void
 {
-    nb_constraints += 2;
+    list<int> indices;
 
+    // record the variables in the opb file
     for (auto & v : values) {
-        int idx = vars_map.size() + 1;
-        vars_map.emplace(pair{ name, v }, idx);
-        log->record_var(name, v);
-        s << "* x" << idx << " means " << name << " = " << v << endl;
+        int idx = proof.create_variable_value_mapping(name, v);
+        proof.model_stream() << "* x" << idx << " means " << name << " = " << v << endl;
+        indices.push_back(idx);
     }
 
-    s << "* variable " << name << " takes exactly one value" << endl;
-    for (auto & v : values) {
-        auto idx = vars_map.find(pair{ name, v })->second;
-        s << "1 " << "x" << idx << " ";
-    }
-    s << ">= 1 ;" << endl;
-    if (log)
-        log->record_var_takes_at_least_one_value(name, ++log->current_index);
+    // a variable must take exactly one value
+    proof.model_stream() << "* variable " << name << " takes exactly one value" << endl;
 
-    for (auto & v : values) {
-        auto idx = vars_map.find(pair{ name, v })->second;
-        s << "-1 " << "x" << idx << " ";
-    }
-    s << ">= -1 ;" << endl;
+    for (auto & i : indices)
+        proof.model_stream() << "1 " << "x" << i << " ";
+    proof.model_stream() << ">= 1 ;" << endl;
+    proof.next_model_line();
+    proof.wrote_variable_takes_at_least_one_value(name, proof.last_model_line());
 
-    if (log)
-        ++log->current_index;
+    for (auto & i : indices)
+        proof.model_stream() << "-1 " << "x" << i << " ";
+    proof.model_stream() << ">= -1 ;" << endl;
+    proof.next_model_line();
+    proof.wrote_variable_takes_at_most_one_value(name, proof.last_model_line());
 }
 

@@ -3,31 +3,31 @@
 #include "solve.hh"
 #include "model.hh"
 #include "constraint.hh"
+#include "proof.hh"
 #include "result.hh"
 #include "variable.hh"
 
-#include <list>
 #include <set>
 
 using std::endl;
-using std::list;
+using std::optional;
 using std::set;
 using std::string;
 
-auto search(int depth, Result & result, const Model & start_model, RefutationLog & log) -> void
+auto search(int depth, Result & result, const Model & start_model, optional<Proof> & proof) -> void
 {
     ++result.nodes;
     auto model = start_model;
 
-    if (log) {
-        *log->stream << "* propagation at depth " << depth << endl;
+    if (proof) {
+        proof->proof_stream() << "* propagation at depth " << depth << endl;
     }
 
     bool modified = true;
     while (modified) {
         modified = false;
         for (auto & c : model.constraints) {
-            switch (c->propagate(model, log)) {
+            switch (c->propagate(model, proof)) {
                 case PropagationResult::Inconsistent: return;
                 case PropagationResult::Consistent:   modified = true; break;
                 case PropagationResult::NoChange:     break;
@@ -37,9 +37,8 @@ auto search(int depth, Result & result, const Model & start_model, RefutationLog
 
     string branch_variable_name;
     if (auto branch_variable = model.select_branch_variable(branch_variable_name)) {
-        if (log) {
-            *log->stream << "* branching on variable " << branch_variable_name << " at depth " << depth << endl;
-        }
+        if (proof)
+            proof->proof_stream() << "* branching on variable " << branch_variable_name << " at depth " << depth << endl;
 
         set<int> conflicts;
         auto possible_values = branch_variable->values;
@@ -47,59 +46,60 @@ auto search(int depth, Result & result, const Model & start_model, RefutationLog
         for (auto & v : possible_values) {
             branch_variable->values = {{ v }};
 
-            if (log) {
-                *log->stream << "* guessing " << branch_variable_name << " = " << v << " at depth " << depth << endl;
-                log->push_why_nots();
+            if (proof) {
+                proof->proof_stream() << "* guessing " << branch_variable_name << " = " << v << " at depth " << depth << endl;
+                proof->push_context();
 
-                for (auto & w : branch_variable->original_values)
-                    if (w != v) {
-                        log->record_why_not(branch_variable_name, w, log->var_takes_at_least_one_value(branch_variable_name) + 1);
-                    }
+                for (auto & w : *branch_variable->original_values)
+                    if (w != v)
+                        proof->guessing_var_not_equal_value(branch_variable_name, w);
             }
-            search(depth + 1, result, model, log);
+
+            search(depth + 1, result, model, proof);
+
             if (! result.solution.empty())
                 return;
 
-            if (log) {
-                *log->stream << "* got a conflict for " << branch_variable_name << " = " << v << " at depth " << depth << endl;
-                conflicts.insert(log->current_index);
-                log->pop_why_nots();
+            if (proof) {
+                proof->proof_stream() << "* got a conflict for " << branch_variable_name << " = " << v
+                    << " at depth " << depth << endl;
+                conflicts.insert(proof->last_proof_line());
+                proof->pop_context();
             }
         }
 
-        if (log) {
-            for (auto & v : branch_variable->original_values) {
+        if (proof) {
+            for (auto & v : *branch_variable->original_values) {
                 if (possible_values.count(v))
                     continue;
-                conflicts.insert(log->why_not(branch_variable_name, v));
+                conflicts.insert(proof->line_for_var_not_equal_value(branch_variable_name, v));
             }
 
-            *log->stream << "* domain wipeout on variable " << branch_variable_name << " at depth " << depth << endl;
-            *log->stream << "p " << log->var_takes_at_least_one_value(branch_variable_name);
+            proof->proof_stream() << "* domain wipeout on variable " << branch_variable_name << " at depth " << depth << endl;
+            proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(branch_variable_name);
             for (auto & c : conflicts)
-                *log->stream << " " << c << " +";
-            *log->stream << " " << conflicts.size() << " d 0" << endl;
-            ++log->current_index;
+                proof->proof_stream() << " " << c << " +";
+            proof->proof_stream() << " " << (conflicts.size() + 1) << " d 0" << endl;
+            proof->next_proof_line();
         }
     }
     else
         model.save_result(result);
 };
 
-auto solve(const Model & model, RefutationLog & log, int nb_opb_vars, int nb_opb_constraints) -> Result
+auto solve(const Model & model, optional<Proof> & proof) -> Result
 {
-    if (log) {
-        *log->stream << "refutation using f l p c 0" << endl;
-        model.write_ref_header(log, nb_opb_vars, nb_opb_constraints);
-        log->push_why_nots();
+    if (proof) {
+        model.start_proof(*proof);
+        proof->push_context();
     }
 
     Result result;
-    search(0, result, model, log);
+    search(0, result, model, proof);
 
-    if (log && result.solution.empty()) {
-        *log->stream << "c " << log->current_index << " 0" << endl;
-        ++log->current_index;
+    if (proof && result.solution.empty()) {
+        proof->proof_stream() << "c " << proof->last_proof_line() << " 0" << endl;
+        proof->next_proof_line();
     }
 
     return result;

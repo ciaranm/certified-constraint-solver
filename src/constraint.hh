@@ -5,9 +5,8 @@
 
 #include "constraint-fwd.hh"
 #include "model-fwd.hh"
-#include "refutation_log.hh"
+#include "proof-fwd.hh"
 
-#include <list>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -23,9 +22,9 @@ struct Constraint
     Constraint(const Constraint &) = delete;
     Constraint & operator= (const Constraint &) = delete;
 
-    [[ nodiscard ]] virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult = 0;
+    [[ nodiscard ]] virtual auto propagate(Model & model, std::optional<Proof> &) const -> PropagationResult = 0;
 
-    virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void = 0;
+    virtual auto start_proof(const Model &, Proof &) -> void = 0;
 };
 
 class NotEqualConstraint : public Constraint
@@ -38,8 +37,9 @@ class NotEqualConstraint : public Constraint
         NotEqualConstraint(const std::string &, const std::string &);
         virtual ~NotEqualConstraint() override;
 
-        virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult override;
-        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void override;
+        virtual auto propagate(Model & model, std::optional<Proof> &) const -> PropagationResult override;
+
+        virtual auto start_proof(const Model &, Proof &) -> void override;
 };
 
 struct Table
@@ -47,7 +47,7 @@ struct Table
     explicit Table(int a);
 
     int arity;
-    std::list<std::vector<int> > allowed_tuples;
+    std::vector<std::vector<int> > allowed_tuples;
 };
 
 class TableConstraint : public Constraint
@@ -57,7 +57,7 @@ class TableConstraint : public Constraint
         std::vector<std::string> _vars;
         std::shared_ptr<const Table> _table;
         std::map<std::vector<int>, int> _var_for_tuple;
-        std::map<std::vector<int>, int> _constraint_for_tuple;
+        std::map<int, int> _constraint_for_tuple;
         int _must_have_one_constraint;
 
     public:
@@ -66,8 +66,9 @@ class TableConstraint : public Constraint
 
         auto associate_with_variable(const std::string &) -> void;
 
-        virtual auto propagate(Model & model, RefutationLog & log) const -> PropagationResult override;
-        virtual auto encode_as_opb(const Model & model, std::ostream &, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void override;
+        virtual auto propagate(Model & model, std::optional<Proof> &) const -> PropagationResult override;
+
+        virtual auto start_proof(const Model &, Proof &) -> void override;
 };
 
 #endif

@@ -8,7 +8,7 @@ if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsa
 fi
 
 if [[ -x ~/.local/bin/refpy ]] ; then
-    if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsat.model --write-opb-to models/nosearchunsat.opb --write-ref-to models/nosearchunsat.log ) ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsat.model --prove ) ; then
         echo "no search unsat test failed" 1>&2
         exit 1
     elif ! ~/.local/bin/refpy models/nosearchunsat.opb models/nosearchunsat.log ; then
@@ -24,7 +24,7 @@ if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsa
 fi
 
 if [[ -x ~/.local/bin/refpy ]] ; then
-    if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsattable.model --write-opb-to models/nosearchunsattable.opb --write-ref-to models/nosearchunsattable.log ) ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsattable.model --prove ) ; then
         echo "no search unsattable test failed" 1>&2
         exit 1
     elif ! ~/.local/bin/refpy models/nosearchunsattable.opb models/nosearchunsattable.log ; then
@@ -45,7 +45,7 @@ if ! grep '^status = false$' <(./certified_constraint_solver models/branchtwice.
 fi
 
 if [[ -x ~/.local/bin/refpy ]] ; then
-    if ! grep '^status = false$' <(./certified_constraint_solver models/branchonce.model --write-opb-to models/branchonce.opb --write-ref-to models/branchonce.log ) ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/branchonce.model --prove ) ; then
         echo "branch once unsat test failed" 1>&2
         exit 1
     elif ! ~/.local/bin/refpy models/branchonce.opb models/branchonce.log ; then
@@ -56,7 +56,7 @@ if [[ -x ~/.local/bin/refpy ]] ; then
 fi
 
 if [[ -x ~/.local/bin/refpy ]] ; then
-    if ! grep '^status = false$' <(./certified_constraint_solver models/branchtwice.model --write-opb-to models/branchtwice.opb --write-ref-to models/branchtwice.log ) ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/branchtwice.model --prove ) ; then
         echo "branch twice unsat test failed" 1>&2
         exit 1
     elif ! ~/.local/bin/refpy models/branchtwice.opb models/branchtwice.log ; then

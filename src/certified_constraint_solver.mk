@@ -4,8 +4,8 @@ SOURCES := \
     constraint.cc \
     certified_constraint_solver.cc \
     model.cc \
+    proof.cc \
     read_model.cc \
-    refutation_log.cc \
     solve.cc \
     variable.cc
 

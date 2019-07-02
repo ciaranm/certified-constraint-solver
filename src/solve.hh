@@ -5,8 +5,10 @@
 
 #include "model-fwd.hh"
 #include "result-fwd.hh"
-#include "refutation_log.hh"
+#include "proof-fwd.hh"
 
-auto solve(const Model & model, RefutationLog & ref, int nb_opb_vars, int nb_opb_constraints) -> Result;
+#include <optional>
+
+auto solve(const Model & model, std::optional<Proof> & proof) -> Result;
 
 #endif

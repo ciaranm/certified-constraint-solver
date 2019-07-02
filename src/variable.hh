@@ -3,10 +3,10 @@
 #ifndef GLASGOW_CONSTRAINT_SOLVER_GUARD_SRC_VARIABLE_HH
 #define GLASGOW_CONSTRAINT_SOLVER_GUARD_SRC_VARIABLE_HH 1
 
-#include "refutation_log-fwd.hh"
+#include "variable-fwd.hh"
+#include "proof-fwd.hh"
 
-#include <iosfwd>
-#include <map>
+#include <memory>
 #include <set>
 #include <utility>
 
@@ -16,9 +16,10 @@ struct Variable
     Variable(const Variable &);
     ~Variable();
 
-    std::set<int> original_values, values;
+    std::shared_ptr<const std::set<int> > original_values;
+    std::set<int> values;
 
-    auto encode_as_opb(const std::string & name, std::ostream & s, std::map<std::pair<std::string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) const -> void;
+    auto start_proof(const std::string & name, Proof &) const -> void;
 };
 
 #endif

@@ -2,18 +2,24 @@
 
 #include "constraint.hh"
 #include "model.hh"
+#include "proof.hh"
 #include "variable.hh"
 
+#include <cstdint>
 #include <set>
+#include <vector>
 
 using std::endl;
-using std::list;
 using std::map;
+using std::optional;
 using std::ostream;
 using std::pair;
 using std::set;
 using std::shared_ptr;
 using std::string;
+using std::to_string;
+using std::uintptr_t;
+using std::vector;
 
 Constraint::~Constraint() = default;
 
@@ -27,7 +33,7 @@ NotEqualConstraint::NotEqualConstraint(const string & a, const string & b) :
 
 NotEqualConstraint::~NotEqualConstraint() = default;
 
-auto NotEqualConstraint::propagate(Model & model, RefutationLog & log) const -> PropagationResult
+auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const -> PropagationResult
 {
     bool changed = false;
 
@@ -37,26 +43,26 @@ auto NotEqualConstraint::propagate(Model & model, RefutationLog & log) const -> 
             if (o.values.count(o_cannot_be)) {
                 o.values.erase(o_cannot_be);
                 changed = true;
-                if (log) {
+                if (proof) {
                     // m must take a single value o_cannot_be. we know m must take
                     // at least one value...
                     set<int> conflicts;
                     // and we know it cannot take any of the other values...
-                    for (auto & v : m.original_values)
+                    for (auto & v : *m.original_values)
                         if (v != o_cannot_be)
-                            conflicts.insert(log->why_not(my_name, v));
+                            conflicts.insert(proof->line_for_var_not_equal_value(my_name, v));
 
                     // now o cannot take the value o_cannot_be
-                    *log->stream << "* not_equals means " << other_name << " can't take "
+                    proof->proof_stream() << "* not_equals means " << other_name << " can't take "
                         << my_name << "'s only value " << o_cannot_be << endl;
 
-                    *log->stream << "p " << log->var_takes_at_least_one_value(my_name);
+                    proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(my_name);
                     for (auto & c : conflicts)
-                        *log->stream << " " << c << " +";
-                    *log->stream << " " << (conflicts.size() + 1) << " d";
-                    *log->stream << " " << _constraint_number.find(o_cannot_be)->second << " + 0" << endl;
-                    ++log->current_index;
-                    log->record_why_not(other_name, o_cannot_be, log->current_index);
+                        proof->proof_stream() << " " << c << " +";
+                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d";
+                    proof->proof_stream() << " " << _constraint_number.find(o_cannot_be)->second << " + 0" << endl;
+                    proof->next_proof_line();
+                    proof->proved_var_not_equal_value(other_name, o_cannot_be, proof->last_proof_line());
                 }
             }
         }
@@ -69,29 +75,21 @@ auto NotEqualConstraint::propagate(Model & model, RefutationLog & log) const -> 
     half_propagate(*s, _second, *f, _first);
 
     if (changed && (f->values.empty() || s->values.empty())) {
-        if (log) {
-            if (f->values.empty()) {
-                // we know f must take at least one value...
-                *log->stream << "* got domain wipeout on not_equals " << _first << " " << _second << endl;
-                *log->stream << "p " << log->var_takes_at_least_one_value(_first);
-                // and we have ruled out all of its values...
-                for (auto & v : f->original_values)
-                    *log->stream << " " << log->why_not(_first, v) << " +";
-                *log->stream << " 0" << endl;
-                ++log->current_index;
-                *log->stream << "c " << log->current_index << " 2 d 0" << endl;
-                ++log->current_index;
-            }
-            else {
-                // we know s must take at least one value...
-                *log->stream << "* got domain wipeout on not_equals " << _first << " " << _second << endl;
-                *log->stream << "p " << log->var_takes_at_least_one_value(_second);
-                // and we have ruled out all of its values...
-                for (auto & v : s->original_values)
-                    *log->stream << " " << log->why_not(_second, v) << " +";
-                *log->stream << " 2 d 0" << endl;
-                ++log->current_index;
-            }
+        if (proof) {
+            auto half_prove_wipeout = [&] (
+                    Variable & empty, const string & empty_name, Variable &, const string & other_name) {
+                proof->proof_stream() << "* got domain wipeout on not_equals " << empty_name << " " << other_name << endl;
+                proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(empty_name);
+                for (auto & v : *empty.original_values)
+                    proof->proof_stream() << " " << proof->line_for_var_not_equal_value(empty_name, v) << " +";
+                proof->proof_stream() << " " << (empty.original_values->size() + 1) << " d 0" << endl;
+                proof->next_proof_line();
+            };
+
+            if (f->values.empty())
+                half_prove_wipeout(*f, _first, *s, _second);
+            else
+                half_prove_wipeout(*s, _second, *f, _first);
         }
         return PropagationResult::Inconsistent;
     }
@@ -101,17 +99,16 @@ auto NotEqualConstraint::propagate(Model & model, RefutationLog & log) const -> 
         return PropagationResult::NoChange;
 }
 
-auto NotEqualConstraint::encode_as_opb(const Model & model, ostream & s, map<pair<string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void
+auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
 {
-    s << "* not equals " << _first << " " << _second << endl;
+    proof.model_stream() << "* not equals " << _first << " " << _second << endl;
     auto w = model.get_variable(_second)->values;
     for (auto & v : model.get_variable(_first)->values)
         if (w.count(v)) {
-            ++nb_constraints;
-            if (log)
-                ++log->current_index;
-            s << "-1 x" << vars_map.find(pair{ _first, v })->second << " -1 x" << vars_map.find(pair{ _second, v })->second << " >= -1 ;" << endl;
-            _constraint_number.emplace(v, nb_constraints);
+            proof.model_stream() << "-1 x" << proof.variable_value_mapping(_first, v)
+                << " -1 x" << proof.variable_value_mapping(_second, v) << " >= -1 ;" << endl;
+            proof.next_model_line();
+            _constraint_number.emplace(v, proof.last_model_line());
         }
 }
 
@@ -132,7 +129,7 @@ auto TableConstraint::associate_with_variable(const string & n) -> void
     _vars.push_back(n);
 }
 
-auto TableConstraint::propagate(Model & model, RefutationLog & log) const -> PropagationResult
+auto TableConstraint::propagate(Model & model, optional<Proof> & proof) const -> PropagationResult
 {
     if (unsigned(_table->arity) != _vars.size())
         throw ModelError{ "Wrong number of variables in table constraint" };
@@ -152,103 +149,88 @@ auto TableConstraint::propagate(Model & model, RefutationLog & log) const -> Pro
             return PropagationResult::NoChange;
     }
 
-    if (log) {
-        // for each tuple that has a constraint in turn, show that its disable
-        // variable is set to true
-        list<int> disabled;
-        for (auto & a : _table->allowed_tuples) {
-            // skip any infeasible tuples, because they don't have an associated constraint
-            if (! _constraint_for_tuple.count(a))
+    if (proof) {
+        // show that every control tuple has to be selected
+        vector<int> controls;
+        for (unsigned t = 0 ; t < _table->allowed_tuples.size() ; ++t) {
+            // check this isn't an infeasible tuple not listed in the model
+            auto c =  _constraint_for_tuple.find(t);
+            if (c == _constraint_for_tuple.end())
                 continue;
 
-            set<int> conflicts;
-            // find a contradicting variable
-            int contradicting_variable = 0;
+            proof->proof_stream() << "* table constraint infeasible tuple" << endl;
+            proof->proof_stream() << "p " << c->second;
             for (int i = 0 ; i < _table->arity ; ++i) {
-                auto v = model.get_variable(_vars[i]);
-                if (v->values.count(a[i]))
-                    continue;
-
-                contradicting_variable = i;
-                conflicts.insert(log->why_not(_vars[i], a[i]));
-                break;
+                if (! model.get_variable(_vars[i])->values.count(_table->allowed_tuples[t][i])) {
+                    // this can contribute at most zero
+                    proof->proof_stream() << " " << proof->line_for_var_not_equal_value(_vars[i], _table->allowed_tuples[t][i]) << " +";
+                } else {
+                    // this can contribute at most one
+                    proof->proof_stream() << " " << proof->line_for_var_val_is_at_most_one(_vars[i], _table->allowed_tuples[t][i]) << " +";
+                }
             }
-
-            // now eliminate non-contradicting variables
-            for (int i = 0 ; i < _table->arity ; ++i) {
-                if (i == contradicting_variable)
-                    continue;
-                auto v = model.get_variable(_vars[i]);
-                conflicts.insert(log->inverse_is_at_least_zero(_vars[i], a[i]));
-            }
-
-            *log->stream << "p " << _constraint_for_tuple.find(a)->second;
-            for (auto & c : conflicts)
-                *log->stream << " " << c << " +";
-            *log->stream << " " << conflicts.size() << " d 0" << endl;
-            disabled.push_back(++log->current_index);
+            // and all of this sums up to too little
+            proof->proof_stream() << " " << _table->arity << " d 0" << endl;
+            proof->next_proof_line();
+            controls.push_back(proof->last_proof_line());
         }
-        *log->stream << "p " << _must_have_one_constraint;
-        for (auto & d : disabled)
-            *log->stream << " " << d << " +";
-        *log->stream << " 0" << endl;
-        ++log->current_index;
+
+        // we can't select every control tuple
+        proof->proof_stream() << "* table constraint is infeasible overall" << endl;
+        proof->proof_stream() << "p " << _must_have_one_constraint;
+        for (auto & c : controls) {
+            proof->proof_stream() << " " << c << " +";
+        }
+        proof->proof_stream() << " 0" << endl;
+        proof->next_proof_line();
     }
 
     return PropagationResult::Inconsistent;
 }
 
-auto TableConstraint::encode_as_opb(const Model & model, std::ostream & s,
-        map<pair<string, int>, int> & vars_map, int & nb_constraints, RefutationLog & log) -> void
+auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
 {
-    s << "* table" << endl;
-    int orig_nb_constraints = nb_constraints;
-    int first_table_index = vars_map.size() + 1;
-    int last_table_index = first_table_index;
+    proof.model_stream() << "* table";
+    for (auto & v : _vars)
+        proof.model_stream() << " " << v;
+    proof.model_stream() << endl;
 
-    for (auto & a : _table->allowed_tuples) {
+    // only write out feasible tuples. for each tuple, we have a control
+    // variable, and either it is selected, or its control variable is
+    // selected.
+    vector<int> controls;
+    for (unsigned t = 0 ; t < _table->allowed_tuples.size() ; ++t) {
         bool is_feasible = true;
-
         for (int i = 0 ; i < _table->arity ; ++i)
-            if (! model.get_variable(_vars[i])->values.count(a[i])) {
+            if (! model.get_variable(_vars[i])->original_values->count(_table->allowed_tuples[t][i])) {
                 is_feasible = false;
-                continue;
+                break;
             }
 
         if (! is_feasible)
             continue;
 
-        int idx = vars_map.size() + 1;
-        last_table_index = idx;
-        vars_map.emplace(pair{ "_table_", nb_constraints }, idx);
-        if (log) {
-            _var_for_tuple.emplace(a, idx);
-        }
-        s << _table->arity << " x" << idx;
+        // either we pick this tuple, or we pick its control variable
+        int control_idx = proof.create_variable_value_mapping("_table_" + to_string(reinterpret_cast<uintptr_t>(this)), t);
+        controls.push_back(control_idx);
+
+        proof.model_stream() << _table->arity << " x" << control_idx;
         for (int i = 0 ; i < _table->arity ; ++i)
-            s << " 1 x" << vars_map.find(pair{ _vars[i], a[i] })->second;
-        s << " >= " << _table->arity << " ;" << endl;
-        ++nb_constraints;
-        if (log) {
-            _constraint_for_tuple.emplace(a, ++log->current_index);
-        }
+            proof.model_stream() << " 1 x" << proof.variable_value_mapping(_vars[i], _table->allowed_tuples[t][i]);
+        proof.model_stream() << " >= " << _table->arity << " ;" << endl;
+        proof.next_model_line();
+        _constraint_for_tuple.emplace(t, proof.last_model_line());
     }
 
-    if (orig_nb_constraints == nb_constraints) {
-        s << "* table is infeasible" << endl;
-        s << "1 x1 >= 999 ;" << endl;
-        ++nb_constraints;
-        if (log)
-            ++log->current_index;
-    }
-    else {
-        for (int c = first_table_index ; c <= last_table_index ; ++c)
-            s << "-1 x" << c << " ";
-        s << ">= " << -(last_table_index - first_table_index) << " ;" << endl;
-        ++nb_constraints;
-        if (log) {
-            _must_have_one_constraint = ++log->current_index;
-        }
-    }
+    // this could just imply unsat, rather than an exception...
+    if (controls.empty())
+        throw ModelError{ "Table constraint is infeasible" };
+
+    // we can't pick every control variable
+    for (auto & c : controls)
+        proof.model_stream() << "-1 x" << c << " ";
+    proof.model_stream() << ">= -" << (controls.size() - 1) << " ;" << endl;
+    proof.next_model_line();
+    _must_have_one_constraint = proof.last_model_line();
 }
 
