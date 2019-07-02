@@ -20,12 +20,21 @@ Modelling
 An input file looks like this:
 
 ```
-intvar x1 1 3
-intvar x2 1 3
-notequal x1 x2
+intvar a 1 3
+intvar b 1 3
+notequal a b
 ```
 
-The solver also supports table constraints. A table can be reused multiple times.
+The solver also supports all different constraints:
+
+```
+intvar a 1 2
+intvar b 1 2
+intvar c 1 3
+alldifferent 3 a b c
+```
+
+And table constraints, where a table can be reused multiple times:
 
 ```
 intvar x1 0 1
