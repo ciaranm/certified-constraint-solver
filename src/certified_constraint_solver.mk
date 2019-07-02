@@ -1,12 +1,14 @@
 TARGET := certified_constraint_solver
 
 SOURCES := \
-    constraint.cc \
     certified_constraint_solver.cc \
+    constraint.cc \
     model.cc \
+    not_equals_constraint.cc \
     proof.cc \
     read_model.cc \
     solve.cc \
+    table_constraint.cc \
     variable.cc
 
 TGT_PREREQS := run-tests.bash

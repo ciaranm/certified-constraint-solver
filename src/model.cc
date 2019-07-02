@@ -6,6 +6,7 @@
 #include "result.hh"
 #include "proof.hh"
 
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <utility>

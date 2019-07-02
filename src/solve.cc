@@ -7,6 +7,7 @@
 #include "result.hh"
 #include "variable.hh"
 
+#include <iomanip>
 #include <set>
 
 using std::endl;

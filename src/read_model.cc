@@ -3,6 +3,8 @@
 #include "read_model.hh"
 #include "model.hh"
 #include "constraint.hh"
+#include "table_constraint.hh"
+#include "not_equals_constraint.hh"
 #include "variable.hh"
 
 #include <fstream>
