@@ -97,5 +97,16 @@ if [[ -x ~/.local/bin/refpy ]] ; then
     rm -f models/alldiff.opb models/alldiff.log
 fi
 
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/littlesip.model --prove ) ; then
+        echo "littlesip unsat test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/littlesip.opb models/littlesip.log ; then
+        echo "littlesip refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/littlesip.opb models/littlesip.log
+fi
+
 true
 
