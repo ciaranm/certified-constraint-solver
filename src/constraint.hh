@@ -8,6 +8,8 @@
 #include "proof-fwd.hh"
 
 #include <optional>
+#include <set>
+#include <string>
 
 struct Constraint
 {
@@ -17,9 +19,14 @@ struct Constraint
     Constraint(const Constraint &) = delete;
     Constraint & operator= (const Constraint &) = delete;
 
-    [[ nodiscard ]] virtual auto propagate(Model & model, std::optional<Proof> &) const -> PropagationResult = 0;
+    [[ nodiscard ]] virtual auto propagate(
+            Model & model,
+            std::optional<Proof> &,
+            std::set<std::string> & changed_variables) const -> bool = 0;
 
     virtual auto start_proof(const Model &, Proof &) -> void = 0;
+
+    virtual auto associated_variables() const -> std::set<std::string> = 0;
 };
 
 #endif

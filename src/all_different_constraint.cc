@@ -26,9 +26,8 @@ AllDifferentConstraint::AllDifferentConstraint(vector<string> && v) :
 
 AllDifferentConstraint::~AllDifferentConstraint() = default;
 
-auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof) const -> PropagationResult
+auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, set<string> & changed_vars) const -> bool
 {
-    PropagationResult r = PropagationResult::NoChange;
     for (bool changed = true ; changed ; ) {
         changed = false;
         for (unsigned i = 0 ; i < _vars.size() ; ++i) {
@@ -49,8 +48,8 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof) c
                     continue;
 
                 j_values.erase(j_cannot_be);
+                changed_vars.insert(_vars[j]);
 
-                r = PropagationResult::Consistent;
                 changed = true;
                 if (proof) {
                     // i_var must take a single value j_cannot_be. we know i_var must take
@@ -83,13 +82,13 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof) c
                         proof->proof_stream() << " " << (model.get_variable(_vars[j])->original_values->size() + 1) << " d 0" << endl;
                         proof->next_proof_line();
                     }
-                    return PropagationResult::Inconsistent;
+                    return false;
                 }
             }
         }
     }
 
-    return r;
+    return true;
 }
 
 auto AllDifferentConstraint::start_proof(const Model & model, Proof & proof) -> void
@@ -108,5 +107,11 @@ auto AllDifferentConstraint::start_proof(const Model & model, Proof & proof) -> 
                     _constraint_numbers.emplace(tuple{ _vars[j], _vars[i], v }, proof.last_model_line());
                 }
         }
+}
+
+auto AllDifferentConstraint::associated_variables() const -> set<string>
+{
+    set<string> result{ _vars.begin(), _vars.end() };
+    return result;
 }
 

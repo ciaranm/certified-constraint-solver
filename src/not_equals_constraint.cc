@@ -24,7 +24,7 @@ NotEqualConstraint::NotEqualConstraint(const string & a, const string & b) :
 
 NotEqualConstraint::~NotEqualConstraint() = default;
 
-auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const -> PropagationResult
+auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<string> & changed_vars) const -> bool
 {
     bool changed = false;
 
@@ -33,6 +33,7 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const
             auto o_cannot_be = *m.values.begin();
             if (o.values.count(o_cannot_be)) {
                 o.values.erase(o_cannot_be);
+                changed_vars.insert(other_name);
                 changed = true;
                 if (proof) {
                     // m must take a single value o_cannot_be. we know m must take
@@ -82,12 +83,10 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof) const
             else
                 half_prove_wipeout(*s, _second, *f, _first);
         }
-        return PropagationResult::Inconsistent;
+        return false;
     }
-    else if (changed)
-        return PropagationResult::Consistent;
-    else
-        return PropagationResult::NoChange;
+
+    return true;
 }
 
 auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
@@ -103,4 +102,11 @@ auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
         }
 }
 
+auto NotEqualConstraint::associated_variables() const -> set<string>
+{
+    set<string> result;
+    result.insert(_first);
+    result.insert(_second);
+    return result;
+}
 

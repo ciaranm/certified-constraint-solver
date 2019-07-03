@@ -11,6 +11,7 @@
 using std::endl;
 using std::optional;
 using std::shared_ptr;
+using std::set;
 using std::string;
 using std::to_string;
 using std::vector;
@@ -32,7 +33,7 @@ auto TableConstraint::associate_with_variable(const string & n) -> void
     _vars.push_back(n);
 }
 
-auto TableConstraint::propagate(Model & model, optional<Proof> & proof) const -> PropagationResult
+auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<string> &) const -> bool
 {
     if (unsigned(_table->arity) != _vars.size())
         throw ModelError{ "Wrong number of variables in table constraint" };
@@ -49,7 +50,7 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof) const ->
         }
 
         if (ok)
-            return PropagationResult::NoChange;
+            return true;
     }
 
     if (proof) {
@@ -88,7 +89,7 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof) const ->
         proof->next_proof_line();
     }
 
-    return PropagationResult::Inconsistent;
+    return false;
 }
 
 auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
@@ -135,5 +136,11 @@ auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
     proof.model_stream() << ">= -" << (controls.size() - 1) << " ;" << endl;
     proof.next_model_line();
     _must_have_one_constraint = proof.last_model_line();
+}
+
+auto TableConstraint::associated_variables() const -> set<string>
+{
+    set<string> result{ _vars.begin(), _vars.end() };
+    return result;
 }
 

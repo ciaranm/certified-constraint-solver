@@ -55,7 +55,7 @@ auto read_model(const string & filename) -> Model
             string first, second;
             if (! (infile >> first >> second))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
-            model.constraints.push_back(make_shared<NotEqualConstraint>(first, second));
+            model.add_constraint(make_shared<NotEqualConstraint>(first, second));
         }
         else if (word == "createtable") {
             string name;
@@ -98,7 +98,7 @@ auto read_model(const string & filename) -> Model
                     throw InputError{ "Bad arguments to '" + word + "' command" };
                 constraint->associate_with_variable(name);
             }
-            model.constraints.push_back(constraint);
+            model.add_constraint(constraint);
         }
         else if (word == "alldifferent") {
             int number;
@@ -113,7 +113,7 @@ auto read_model(const string & filename) -> Model
                 vars.push_back(var);
             }
             auto constraint = make_shared<AllDifferentConstraint>(move(vars));
-            model.constraints.push_back(constraint);
+            model.add_constraint(constraint);
         }
         else {
             throw InputError{ "Unknown command '" + word + "'" };

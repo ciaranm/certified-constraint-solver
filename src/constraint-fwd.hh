@@ -5,11 +5,4 @@
 
 struct Constraint;
 
-enum class PropagationResult
-{
-    Consistent,
-    NoChange,
-    Inconsistent
-};
-
 #endif

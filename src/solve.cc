@@ -24,16 +24,10 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
         proof->proof_stream() << "* propagation at depth " << depth << endl;
     }
 
-    bool modified = true;
-    while (modified) {
-        modified = false;
-        for (auto & c : model.constraints) {
-            switch (c->propagate(model, proof)) {
-                case PropagationResult::Inconsistent: return;
-                case PropagationResult::Consistent:   modified = true; break;
-                case PropagationResult::NoChange:     break;
-            }
-        }
+    if (! model.propagate(proof)) {
+        if (proof)
+            proof->proof_stream() << "* propagation detected inconsistency at depth " << depth << endl;
+        return;
     }
 
     string branch_variable_name;

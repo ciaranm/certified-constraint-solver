@@ -18,9 +18,11 @@ class NotEqualConstraint : public Constraint
         NotEqualConstraint(const std::string &, const std::string &);
         virtual ~NotEqualConstraint() override;
 
-        virtual auto propagate(Model & model, std::optional<Proof> &) const -> PropagationResult override;
+        virtual auto propagate(Model & model, std::optional<Proof> &, std::set<std::string> &) const -> bool override;
 
         virtual auto start_proof(const Model &, Proof &) -> void override;
+
+        virtual auto associated_variables() const -> std::set<std::string> override;
 };
 
 #endif

@@ -29,7 +29,8 @@ class ModelError : public std::exception
 class Model
 {
     private:
-        std::map<std::string, std::shared_ptr<Variable> > _vars;
+        struct Imp;
+        std::unique_ptr<Imp> _imp;
 
     public:
         Model();
@@ -37,15 +38,16 @@ class Model
         ~Model();
 
         [[ nodiscard ]] auto add_variable(const std::string &, std::shared_ptr<Variable>) -> bool;
+        auto add_constraint(std::shared_ptr<Constraint>) -> void;
 
         auto get_variable(const std::string &) const -> std::shared_ptr<Variable>;
         auto select_branch_variable(std::string &) const -> std::shared_ptr<Variable>;
 
         auto save_result(Result &) const -> void;
 
-        std::list<std::shared_ptr<Constraint> > constraints;
-
         auto start_proof(Proof &) const -> void;
+
+        [[ nodiscard ]] auto propagate(std::optional<Proof> &) -> bool;
 };
 
 #endif
