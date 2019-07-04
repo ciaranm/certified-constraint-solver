@@ -14,16 +14,16 @@ struct Table
     explicit Table(int a);
 
     int arity;
-    std::vector<std::vector<int> > allowed_tuples;
+    std::vector<std::vector<VariableValue> > allowed_tuples;
 };
 
 class TableConstraint : public Constraint
 {
     private:
         int _arity;
-        std::vector<std::string> _vars;
+        std::vector<VariableID> _vars;
         std::shared_ptr<const Table> _table;
-        std::map<std::vector<int>, int> _var_for_tuple;
+        std::map<std::vector<VariableValue>, int> _var_for_tuple;
         std::map<int, int> _constraint_for_tuple;
         int _must_have_one_constraint;
 
@@ -31,13 +31,13 @@ class TableConstraint : public Constraint
         explicit TableConstraint(const std::shared_ptr<const Table> &);
         virtual ~TableConstraint() override;
 
-        auto associate_with_variable(const std::string &) -> void;
+        auto associate_with_variable(VariableID) -> void;
 
-        virtual auto propagate(Model & model, std::optional<Proof> &, std::set<std::string> &) const -> bool override;
+        virtual auto propagate(Model & model, std::optional<Proof> &, std::set<VariableID> &) const -> bool override;
 
         virtual auto start_proof(const Model &, Proof &) -> void override;
 
-        virtual auto associated_variables() const -> std::set<std::string> override;
+        virtual auto associated_variables() const -> std::set<VariableID> override;
 };
 
 #endif

@@ -3,7 +3,7 @@ TARGET_DIR := ./
 
 SUBMAKEFILES := src/certified_constraint_solver.mk
 
-override CXXFLAGS += -O3 -march=native -std=c++17 -Isrc/ -W -Wall -g -ggdb3 -pthread
+override CXXFLAGS += -O3 -march=native -std=c++17 -Isrc/ -Istrong_typedef/ -W -Wall -g -ggdb3 -pthread
 
 ifeq ($(shell uname -s), Linux)
 override LDFLAGS += -pthread -lstdc++fs

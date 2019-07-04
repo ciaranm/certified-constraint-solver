@@ -13,18 +13,18 @@
 class AllDifferentConstraint : public Constraint
 {
     private:
-        std::vector<std::string> _vars;
-        std::map<std::tuple<std::string, std::string, int>, int> _constraint_numbers;
+        std::vector<VariableID> _vars;
+        std::map<std::tuple<VariableID, VariableID, VariableValue>, int> _constraint_numbers;
 
     public:
-        explicit AllDifferentConstraint(std::vector<std::string> &&);
+        explicit AllDifferentConstraint(std::vector<VariableID> &&);
         virtual ~AllDifferentConstraint() override;
 
-        virtual auto propagate(Model & model, std::optional<Proof> &, std::set<std::string> &) const -> bool override;
+        virtual auto propagate(Model & model, std::optional<Proof> &, std::set<VariableID> &) const -> bool override;
 
         virtual auto start_proof(const Model &, Proof &) -> void override;
 
-        virtual auto associated_variables() const -> std::set<std::string> override;
+        virtual auto associated_variables() const -> std::set<VariableID> override;
 };
 
 #endif

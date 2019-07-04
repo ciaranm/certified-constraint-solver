@@ -16,10 +16,10 @@ struct Variable
     Variable(const Variable &);
     ~Variable();
 
-    std::shared_ptr<const std::set<int> > original_values;
-    std::set<int> values;
+    std::shared_ptr<const std::set<VariableValue> > original_values;
+    std::set<VariableValue> values;
 
-    auto start_proof(const std::string & name, Proof &) const -> void;
+    auto start_proof(VariableID, Proof &) const -> void;
 };
 
 #endif

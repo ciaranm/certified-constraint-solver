@@ -30,10 +30,10 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
         return;
     }
 
-    string branch_variable_name;
-    if (auto branch_variable = model.select_branch_variable(branch_variable_name)) {
+    auto [ branch_variable_name, branch_variable ] = model.select_branch_variable();
+    if (branch_variable) {
         if (proof)
-            proof->proof_stream() << "* branching on variable " << branch_variable_name << " at depth " << depth << endl;
+            proof->proof_stream() << "* branching at depth " << depth << endl;
 
         set<int> conflicts;
         auto possible_values = branch_variable->values;
@@ -42,13 +42,11 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
             branch_variable->values = {{ v }};
 
             if (proof) {
-                proof->proof_stream() << "* guessing " << branch_variable_name << " = " << v << " at depth " << depth
-                    << ", associated variable is x" << proof->variable_value_mapping(branch_variable_name, v) << endl;
+                proof->proof_stream() << "* guessing x" << proof->variable_value_mapping(branch_variable_name, v) << endl;
                 proof->push_context();
 
                 for (auto & w : *branch_variable->original_values)
                     if (w != v) {
-                        proof->proof_stream() << "* our guess implies " << branch_variable_name << " /= " << w << endl;
                         proof->proof_stream() << "p " << proof->line_for_var_takes_at_most_one_value(branch_variable_name);
                         for (auto & x : *branch_variable->original_values)
                             if (x != v && x != w)
@@ -65,8 +63,7 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                 return;
 
             if (proof) {
-                proof->proof_stream() << "* got a conflict for " << branch_variable_name << " = " << v
-                    << " at depth " << depth << endl;
+                proof->proof_stream() << "* got a conflict at depth " << depth << endl;
                 conflicts.insert(proof->last_proof_line());
                 proof->pop_context();
             }
@@ -79,7 +76,7 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                 conflicts.insert(proof->line_for_var_not_equal_value(branch_variable_name, v));
             }
 
-            proof->proof_stream() << "* domain wipeout on variable " << branch_variable_name << " at depth " << depth << endl;
+            proof->proof_stream() << "* domain wipeout at depth " << depth << endl;
             proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(branch_variable_name);
             for (auto & c : conflicts)
                 proof->proof_stream() << " " << c << " +";

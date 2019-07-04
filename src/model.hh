@@ -37,11 +37,11 @@ class Model
         Model(const Model &);
         ~Model();
 
-        [[ nodiscard ]] auto add_variable(const std::string &, std::shared_ptr<Variable>) -> bool;
+        [[ nodiscard ]] auto add_variable(const std::string &, VariableID, std::shared_ptr<Variable>) -> bool;
         auto add_constraint(std::shared_ptr<Constraint>) -> void;
 
-        auto get_variable(const std::string &) const -> std::shared_ptr<Variable>;
-        auto select_branch_variable(std::string &) const -> std::shared_ptr<Variable>;
+        auto get_variable(VariableID) const -> std::shared_ptr<Variable>;
+        auto select_branch_variable() const -> std::pair<VariableID, std::shared_ptr<Variable> >;
 
         auto save_result(Result &) const -> void;
 

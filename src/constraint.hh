@@ -6,6 +6,7 @@
 #include "constraint-fwd.hh"
 #include "model-fwd.hh"
 #include "proof-fwd.hh"
+#include "variable-fwd.hh"
 
 #include <optional>
 #include <set>
@@ -22,11 +23,11 @@ struct Constraint
     [[ nodiscard ]] virtual auto propagate(
             Model & model,
             std::optional<Proof> &,
-            std::set<std::string> & changed_variables) const -> bool = 0;
+            std::set<VariableID> & changed_variables) const -> bool = 0;
 
     virtual auto start_proof(const Model &, Proof &) -> void = 0;
 
-    virtual auto associated_variables() const -> std::set<std::string> = 0;
+    virtual auto associated_variables() const -> std::set<VariableID> = 0;
 };
 
 #endif

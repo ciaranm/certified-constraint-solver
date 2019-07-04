@@ -14,21 +14,21 @@ using std::optional;
 using std::set;
 using std::string;
 
-NotEqualConstraint::NotEqualConstraint(const string & a, const string & b) :
+NotEqualConstraint::NotEqualConstraint(VariableID a, VariableID b) :
     _first(a),
     _second(b)
 {
     if (_first == _second)
-        throw ModelError{ "Cannot have not_equals constraint with '" + _first + "' as both arguments" };
+        throw ModelError{ "Cannot have not_equals constraint with duplicate arguments" };
 }
 
 NotEqualConstraint::~NotEqualConstraint() = default;
 
-auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<string> & changed_vars) const -> bool
+auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<VariableID> & changed_vars) const -> bool
 {
     bool changed = false;
 
-    auto half_propagate = [&] (Variable & m, const string & my_name, Variable & o, const string & other_name) {
+    auto half_propagate = [&] (Variable & m, const VariableID & my_name, Variable & o, const VariableID & other_name) {
         if (m.values.size() == 1) {
             auto o_cannot_be = *m.values.begin();
             if (o.values.count(o_cannot_be)) {
@@ -45,8 +45,7 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<s
                             conflicts.insert(proof->line_for_var_not_equal_value(my_name, v));
 
                     // now o cannot take the value o_cannot_be
-                    proof->proof_stream() << "* not_equals means " << other_name << " can't take "
-                        << my_name << "'s only value " << o_cannot_be << endl;
+                    proof->proof_stream() << "* not_equals" << endl;
 
                     proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(my_name);
                     for (auto & c : conflicts)
@@ -69,8 +68,8 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<s
     if (changed && (f->values.empty() || s->values.empty())) {
         if (proof) {
             auto half_prove_wipeout = [&] (
-                    Variable & empty, const string & empty_name, Variable &, const string & other_name) {
-                proof->proof_stream() << "* got domain wipeout on not_equals " << empty_name << " " << other_name << endl;
+                    Variable & empty, VariableID empty_name, Variable &, VariableID) {
+                proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
                 proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(empty_name);
                 for (auto & v : *empty.original_values)
                     proof->proof_stream() << " " << proof->line_for_var_not_equal_value(empty_name, v) << " +";
@@ -91,7 +90,7 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<s
 
 auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
 {
-    proof.model_stream() << "* not equals " << _first << " " << _second << endl;
+    proof.model_stream() << "* not equals" << endl;
     auto & w = model.get_variable(_second)->values;
     for (auto & v : model.get_variable(_first)->values)
         if (w.count(v)) {
@@ -102,9 +101,9 @@ auto NotEqualConstraint::start_proof(const Model & model, Proof & proof) -> void
         }
 }
 
-auto NotEqualConstraint::associated_variables() const -> set<string>
+auto NotEqualConstraint::associated_variables() const -> set<VariableID>
 {
-    set<string> result;
+    set<VariableID> result;
     result.insert(_first);
     result.insert(_second);
     return result;

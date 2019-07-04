@@ -19,14 +19,14 @@ using std::string;
 using std::tuple;
 using std::vector;
 
-AllDifferentConstraint::AllDifferentConstraint(vector<string> && v) :
+AllDifferentConstraint::AllDifferentConstraint(vector<VariableID> && v) :
     _vars(move(v))
 {
 }
 
 AllDifferentConstraint::~AllDifferentConstraint() = default;
 
-auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, set<string> & changed_vars) const -> bool
+auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, set<VariableID> & changed_vars) const -> bool
 {
     for (bool changed = true ; changed ; ) {
         changed = false;
@@ -61,8 +61,7 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, s
                             conflicts.insert(proof->line_for_var_not_equal_value(_vars[i], v));
 
                     // now j cannot take the value j_cannot_be
-                    proof->proof_stream() << "* all different means " << _vars[j] << " can't take "
-                        << _vars[i] << "'s only value " << j_cannot_be << endl;
+                    proof->proof_stream() << "* all different" << endl;
 
                     proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(_vars[i]);
                     for (auto & c : conflicts)
@@ -75,7 +74,7 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, s
 
                 if (j_values.empty()) {
                     if (proof) {
-                        proof->proof_stream() << "* got domain wipeout on all_different " << _vars[i] << " " << _vars[j] << endl;
+                        proof->proof_stream() << "* got domain wipeout on all_different" << endl;
                         proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(_vars[j]);
                         for (auto & v : *model.get_variable(_vars[j])->original_values)
                             proof->proof_stream() << " " << proof->line_for_var_not_equal_value(_vars[j], v) << " +";
@@ -109,9 +108,9 @@ auto AllDifferentConstraint::start_proof(const Model & model, Proof & proof) -> 
         }
 }
 
-auto AllDifferentConstraint::associated_variables() const -> set<string>
+auto AllDifferentConstraint::associated_variables() const -> set<VariableID>
 {
-    set<string> result{ _vars.begin(), _vars.end() };
+    set<VariableID> result{ _vars.begin(), _vars.end() };
     return result;
 }
 

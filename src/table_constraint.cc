@@ -28,12 +28,12 @@ TableConstraint::TableConstraint(const shared_ptr<const Table> & t) :
 
 TableConstraint::~TableConstraint() = default;
 
-auto TableConstraint::associate_with_variable(const string & n) -> void
+auto TableConstraint::associate_with_variable(VariableID n) -> void
 {
     _vars.push_back(n);
 }
 
-auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<string> &) const -> bool
+auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<VariableID> &) const -> bool
 {
     if (unsigned(_table->arity) != _vars.size())
         throw ModelError{ "Wrong number of variables in table constraint" };
@@ -94,10 +94,7 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<stri
 
 auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
 {
-    proof.model_stream() << "* table";
-    for (auto & v : _vars)
-        proof.model_stream() << " " << v;
-    proof.model_stream() << endl;
+    proof.model_stream() << "* table" << endl;
 
     // only write out feasible tuples. for each tuple, we have a control
     // variable, and either it is selected, or its control variable is
@@ -115,7 +112,7 @@ auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
             continue;
 
         // either we pick this tuple, or we pick its control variable
-        int control_idx = proof.create_variable_value_mapping("_table_" + to_string(reinterpret_cast<uintptr_t>(this)), t);
+        int control_idx = proof.create_anonymous_extra_variable();
         controls.push_back(control_idx);
 
         proof.model_stream() << _table->arity << " x" << control_idx;
@@ -138,9 +135,9 @@ auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
     _must_have_one_constraint = proof.last_model_line();
 }
 
-auto TableConstraint::associated_variables() const -> set<string>
+auto TableConstraint::associated_variables() const -> set<VariableID>
 {
-    set<string> result{ _vars.begin(), _vars.end() };
+    set<VariableID> result{ _vars.begin(), _vars.end() };
     return result;
 }
 

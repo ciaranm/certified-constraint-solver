@@ -1,0 +1,3 @@
+[submodule "strong_typedef"]
+	path = strong_typedef
+	url = https://github.com/anthonywilliams/strong_typedef

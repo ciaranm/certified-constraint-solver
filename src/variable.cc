@@ -17,9 +17,9 @@ using std::string;
 
 Variable::Variable(int lw, int ub)
 {
-    auto v = make_shared<set<int> >();
+    auto v = make_shared<set<VariableValue> >();
     for ( ; lw <= ub ; ++lw)
-        v->insert(lw);
+        v->insert(VariableValue{ lw });
     original_values = v;
     values = *v;
 }
@@ -28,19 +28,18 @@ Variable::~Variable() = default;
 
 Variable::Variable(const Variable &) = default;
 
-auto Variable::start_proof(const string & name, Proof & proof) const -> void
+auto Variable::start_proof(VariableID name, Proof & proof) const -> void
 {
     list<int> indices;
 
     // record the variables in the opb file
     for (auto & v : values) {
         int idx = proof.create_variable_value_mapping(name, v);
-        proof.model_stream() << "* x" << idx << " means " << name << " = " << v << endl;
         indices.push_back(idx);
     }
 
     // a variable must take exactly one value
-    proof.model_stream() << "* variable " << name << " takes exactly one value" << endl;
+    proof.model_stream() << "* variable takes exactly one value" << endl;
 
     for (auto & i : indices)
         proof.model_stream() << "1 " << "x" << i << " ";

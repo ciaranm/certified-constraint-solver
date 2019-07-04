@@ -41,6 +41,21 @@ auto read_model(const string & filename) -> Model
 
     Model model;
     map<string, std::shared_ptr<Table> > tables;
+    map<string, VariableID> variable_name_to_id;
+
+    auto make_name = [&] (const string & n) -> VariableID {
+        VariableID id{ int(variable_name_to_id.size()) };
+        if (! variable_name_to_id.emplace(n, id).second)
+            throw InputError{ "Duplicate variable '" + n + "'" };
+        return id;
+    };
+
+    auto get_name = [&] (const string & n) -> VariableID {
+        auto i = variable_name_to_id.find(n);
+        if (i == variable_name_to_id.end())
+            throw InputError{ "No variable named '" + n + "'" };
+        return i->second;
+    };
 
     while (infile >> word) {
         if (word == "intvar") {
@@ -48,14 +63,14 @@ auto read_model(const string & filename) -> Model
             int lb, ub;
             if (! (infile >> name >> lb >> ub))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
-            if (! model.add_variable(name, make_shared<Variable>(lb, ub)))
+            if (! model.add_variable(name, make_name(name), make_shared<Variable>(lb, ub)))
                 throw InputError{ "Duplicate variable '" + name + "'" };
         }
         else if (word == "notequal") {
             string first, second;
             if (! (infile >> first >> second))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
-            model.add_constraint(make_shared<NotEqualConstraint>(first, second));
+            model.add_constraint(make_shared<NotEqualConstraint>(get_name(first), get_name(second)));
         }
         else if (word == "createtable") {
             string name;
@@ -73,12 +88,12 @@ auto read_model(const string & filename) -> Model
             if (table == tables.end())
                 throw InputError{ "No table named '" + name + "'" };
 
-            vector<int> tuple;
+            vector<VariableValue> tuple;
             for (int i = 0 ; i < table->second->arity ; ++i) {
                 int value;
                 if (! (infile >> value))
                     throw InputError{ "Bad arguments to '" + word + "' command" };
-                tuple.push_back(value);
+                tuple.push_back(VariableValue{ value });
             }
             table->second->allowed_tuples.push_back(move(tuple));
         }
@@ -96,7 +111,7 @@ auto read_model(const string & filename) -> Model
                 string name;
                 if (! (infile >> name))
                     throw InputError{ "Bad arguments to '" + word + "' command" };
-                constraint->associate_with_variable(name);
+                constraint->associate_with_variable(get_name(name));
             }
             model.add_constraint(constraint);
         }
@@ -105,12 +120,12 @@ auto read_model(const string & filename) -> Model
             if (! (infile >> number))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
 
-            vector<string> vars;
+            vector<VariableID> vars;
             for (int i = 0 ; i < number ; ++i) {
                 string var;
                 if (! (infile >> var))
                     throw InputError{ "Bad arguments to '" + word + "' command" };
-                vars.push_back(var);
+                vars.push_back(get_name(var));
             }
             auto constraint = make_shared<AllDifferentConstraint>(move(vars));
             model.add_constraint(constraint);
