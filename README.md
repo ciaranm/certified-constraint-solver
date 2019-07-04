@@ -10,6 +10,9 @@ Please contact [Ciaran McCreesh](mailto:ciaran.mccreesh@glasgow.ac.uk) with any 
 Compiling
 ---------
 
+This project uses git submodules for dependencies. You should run 'git submodule update --init'
+after your initial 'git clone'.
+
 To build, type 'make'. You will need a C++17 compiler (we test with GCC 8.3, and Clang 7.0.1 on
 Linux, and Xcode 10.2 on Mac OS X) and Boost (we use 1.65.1 or later, built with threads enabled).
 
