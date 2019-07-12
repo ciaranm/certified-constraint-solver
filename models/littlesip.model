@@ -1,8 +1,11 @@
-intvar a 1 4
-intvar b 1 4
-intvar c 1 4
-intvar d 1 4
+# four pattern vertices, seven target vertices
+intvar a 1 7
+intvar b 1 7
+intvar c 1 7
+intvar d 1 7
+# find an injective mapping
 alldifferent 4 a b c d
+# these are the edges in the target graph
 createtable edges 2
 addtotable edges 1 2
 addtotable edges 1 3
@@ -12,6 +15,7 @@ addtotable edges 4 5
 addtotable edges 4 6
 addtotable edges 5 6
 addtotable edges 6 7
+# and these are the edges in the pattern graph
 table edges a b
 table edges a c
 table edges b d

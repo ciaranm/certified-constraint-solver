@@ -130,6 +130,10 @@ auto read_model(const string & filename) -> Model
             auto constraint = make_shared<AllDifferentConstraint>(move(vars));
             model.add_constraint(constraint);
         }
+        else if (word == "#") {
+            string ignore;
+            getline(infile, ignore);
+        }
         else {
             throw InputError{ "Unknown command '" + word + "'" };
         }

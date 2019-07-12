@@ -22,8 +22,11 @@ Modelling
 An input file looks like this:
 
 ```
+# Create two variables named a and b, each with
+# domains { 1, 2, 3 }
 intvar a 1 3
 intvar b 1 3
+# Post the constraint a != b
 notequal a b
 ```
 
@@ -43,11 +46,16 @@ intvar x1 0 1
 intvar x2 0 1
 intvar x3 0 1
 intvar x4 0 1
+# First we create a table, and say that each of its
+# tuples is of length 3
 createtable oneofthree 3
+# Now we specify permitted tuples in this table
 addtotable oneofthree 1 0 0
 addtotable oneofthree 0 1 0
 addtotable oneofthree 0 0 1
+# We apply this table constraint to three variables
 table oneofthree x1 x2 x3
+# And we can apply it again to another three variables
 table oneofthree x2 x3 x4
 ```
 
