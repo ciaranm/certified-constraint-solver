@@ -113,5 +113,10 @@ if ! grep '^status = true$' <(./certified_constraint_solver models/array.model )
     exit 1
 fi
 
+if ! grep '^status = true$' <(./certified_constraint_solver models/sudoku.model ) ; then
+    echo "sudoku test failed" 1>&2
+    exit 1
+fi
+
 true
 
