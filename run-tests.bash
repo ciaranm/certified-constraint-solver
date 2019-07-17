@@ -108,5 +108,10 @@ if [[ -x ~/.local/bin/refpy ]] ; then
     rm -f models/littlesip.opb models/littlesip.log
 fi
 
+if ! grep '^status = true$' <(./certified_constraint_solver models/array.model ) ; then
+    echo "array test failed" 1>&2
+    exit 1
+fi
+
 true
 

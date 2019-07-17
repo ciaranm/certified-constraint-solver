@@ -20,6 +20,7 @@ using std::make_shared;
 using std::map;
 using std::move;
 using std::string;
+using std::to_string;
 using std::vector;
 
 InputError::InputError(const string & m) noexcept :
@@ -66,6 +67,24 @@ auto read_model(const string & filename) -> Model
                 throw InputError{ "Bad arguments to '" + word + "' command" };
             if (! model.add_variable(name, make_name(name), make_shared<Variable>(lb, ub)))
                 throw InputError{ "Duplicate variable '" + name + "'" };
+        }
+        else if (word == "intvararray") {
+            string name;
+            int dim;
+            int s1, e1, s2, e2;
+            int lb, ub;
+            if (! (infile >> name >> dim))
+                throw InputError{ "Bad arguments to '" + word + "' command" };
+            if (dim != 2)
+                throw InputError{ "Bad arguments to '" + word + "' command: only dimension 2 supported out of sheer laziness" };
+            if (! (infile >> s1 >> e1 >> s2 >> e2 >> lb >> ub))
+                throw InputError{ "Bad arguments to '" + word + "' command" };
+            for (int i = s1 ; i <= e1 ; ++i)
+                for (int j = s2 ; j <= e2 ; ++j) {
+                    string full_name = name + "[" + to_string(i) + "," + to_string(j) + "]";
+                    if (! model.add_variable(full_name, make_name(full_name), make_shared<Variable>(lb, ub)))
+                        throw InputError{ "Duplicate variable '" + name + "'" };
+                }
         }
         else if (word == "notequal") {
             string first, second;
