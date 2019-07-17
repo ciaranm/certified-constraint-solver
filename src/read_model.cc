@@ -5,6 +5,7 @@
 #include "constraint.hh"
 #include "table_constraint.hh"
 #include "not_equals_constraint.hh"
+#include "equals_constant_constraint.hh"
 #include "all_different_constraint.hh"
 #include "variable.hh"
 
@@ -71,6 +72,13 @@ auto read_model(const string & filename) -> Model
             if (! (infile >> first >> second))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
             model.add_constraint(make_shared<NotEqualConstraint>(get_name(first), get_name(second)));
+        }
+        else if (word == "equal") {
+            string first;
+            int second;
+            if (! (infile >> first >> second))
+                throw InputError{ "Bad arguments to '" + word + "' command" };
+            model.add_constraint(make_shared<EqualConstantConstraint>(get_name(first), VariableValue{ second }));
         }
         else if (word == "createtable") {
             string name;

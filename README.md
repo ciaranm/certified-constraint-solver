@@ -59,6 +59,13 @@ table oneofthree x1 x2 x3
 table oneofthree x2 x3 x4
 ```
 
+And for convenience, variables can be forced to a constant value:
+
+```
+intvar a 1 3
+equal a 2
+```
+
 Running
 -------
 

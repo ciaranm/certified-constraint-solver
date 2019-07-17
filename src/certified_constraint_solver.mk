@@ -6,6 +6,7 @@ SOURCES := \
     constraint.cc \
     model.cc \
     not_equals_constraint.cc \
+    equals_constant_constraint.cc \
     proof.cc \
     read_model.cc \
     solve.cc \
