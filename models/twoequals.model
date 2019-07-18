@@ -1,0 +1,4 @@
+intvar y1 1 2
+intvar y2 1 2
+equal y1 1
+equal y1 2

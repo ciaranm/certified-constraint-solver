@@ -18,6 +18,38 @@ if [[ -x ~/.local/bin/refpy ]] ; then
     rm -f models/nosearchunsat.opb models/nosearchunsat.log
 fi
 
+if ! grep '^status = false$' <(./certified_constraint_solver models/equal.model ) ; then
+    echo "equal test failed" 1>&2
+    exit 1
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/equal.model --prove ) ; then
+        echo "equal test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/equal.opb models/equal.log ; then
+        echo "equal refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/equal.opb models/equal.log
+fi
+
+if ! grep '^status = false$' <(./certified_constraint_solver models/twoequals.model ) ; then
+    echo "two equals test failed" 1>&2
+    exit 1
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/twoequals.model --prove ) ; then
+        echo "two equals test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/twoequals.opb models/twoequals.log ; then
+        echo "two equals refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/twoequals.opb models/twoequals.log
+fi
+
 if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsattable.model ) ; then
     echo "no search unsat table test failed" 1>&2
     exit 1
