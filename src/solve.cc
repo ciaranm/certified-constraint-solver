@@ -84,6 +84,10 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
             if (proof) {
                 stack.pop_back();
                 proof->proof_stream() << "* got a conflict at depth " << depth << endl;
+
+                proof->proof_stream() << "p " << proof->last_proof_line() << " " << proof->line_for_var_val_is_at_most_one(branch_variable_name, v) << " + 2 d 0" << endl;
+                proof->next_proof_line();
+
                 conflicts.insert(proof->last_proof_line());
 
                 if (proof->asserty())
