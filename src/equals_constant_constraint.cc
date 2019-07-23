@@ -22,7 +22,9 @@ auto EqualConstantConstraint::propagate(Model & model, optional<Proof> & proof, 
     auto f = model.get_variable(_first);
 
     if (proof) {
-        proof->proof_stream() << "* equals" << endl;
+        if (f->values.size() > 1 || (f->values.size() == 1 && *f->values.begin() != _second))
+            proof->proof_stream() << "* equals" << endl;
+
         for (auto & v : f->values)
             if (v != _second) {
                 proof->proof_stream() << "p " << proof->line_for_var_takes_at_most_one_value(_first) << " "
@@ -33,6 +35,7 @@ auto EqualConstantConstraint::propagate(Model & model, optional<Proof> & proof, 
                 proof->proof_stream() << " 0" << endl;
                 proof->next_proof_line();
                 proof->proved_var_not_equal_value(_first, v, proof->last_proof_line());
+;
             }
     }
 
