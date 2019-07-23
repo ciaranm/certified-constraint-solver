@@ -69,6 +69,7 @@ auto main(int argc, char * argv[]) -> int
             ("prove",                                        "Produce an unsat proof")
             ("write-opb-to",    po::value<string>(),         "Specify the proof model file (default: input file with .obp extension)")
             ("write-ref-to",    po::value<string>(),         "Specify the proof log file (default: input file with .log extension)")
+            ("asserty",                                      "Generate lots of extra assertions in the proof")
             ;
 
         po::positional_options_description positional_options;
@@ -139,10 +140,12 @@ auto main(int argc, char * argv[]) -> int
                 log_file = log_file.replace_extension(".log");
             }
 
+            bool asserty = options_vars.count("asserty");
+
 #if defined(STD_FS_IS_BOOST)
-            proof = make_optional<Proof>(opb_file.string(), log_file.string());
+            proof = make_optional<Proof>(opb_file.string(), log_file.string(), asserty);
 #else
-            proof = make_optional<Proof>(opb_file, log_file);
+            proof = make_optional<Proof>(opb_file, log_file, asserty);
 #endif
         }
 

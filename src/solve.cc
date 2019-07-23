@@ -8,14 +8,19 @@
 #include "variable.hh"
 
 #include <iomanip>
+#include <list>
 #include <set>
+#include <utility>
 
 using std::endl;
+using std::list;
 using std::optional;
+using std::pair;
 using std::set;
 using std::string;
+using std::to_string;
 
-auto search(int depth, Result & result, const Model & start_model, optional<Proof> & proof) -> void
+auto search(int depth, Result & result, const Model & start_model, optional<Proof> & proof, list<pair<VariableID, VariableValue> > & stack) -> void
 {
     ++result.nodes;
     auto model = start_model;
@@ -25,8 +30,11 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
     }
 
     if (! model.propagate(proof)) {
-        if (proof)
+        if (proof) {
             proof->proof_stream() << "* propagation detected inconsistency at depth " << depth << endl;
+            if (proof->asserty())
+                proof->assert_what_we_just_did("propagation failure");
+        }
         return;
     }
 
@@ -54,17 +62,24 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                         proof->proof_stream() << " 0" << endl;
                         proof->next_proof_line();
                         proof->proved_var_not_equal_value(branch_variable_name, w, proof->last_proof_line());
+
+                        if (proof->asserty())
+                            proof->assert_we_proved_var_not_equal_value(branch_variable_name, w, "recalling previous assertion");
                     }
             }
 
-            search(depth + 1, result, model, proof);
+            search(depth + 1, result, model, proof, stack);
 
             if (! result.solution.empty())
                 return;
 
             if (proof) {
+                stack.pop_back();
                 proof->proof_stream() << "* got a conflict at depth " << depth << endl;
                 conflicts.insert(proof->last_proof_line());
+
+                if (proof->asserty())
+                    proof->assert_we_proved_var_not_equal_value(branch_variable_name, v, "following a conflict");
                 proof->pop_context();
             }
         }
@@ -82,6 +97,9 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                 proof->proof_stream() << " " << c << " +";
             proof->proof_stream() << " " << (conflicts.size() + 1) << " d 0" << endl;
             proof->next_proof_line();
+
+            if (proof->asserty())
+                proof->assert_what_we_just_did("after a domain wipeout");
         }
     }
     else
@@ -96,7 +114,12 @@ auto solve(const Model & model, optional<Proof> & proof) -> Result
     }
 
     Result result;
-    search(0, result, model, proof);
+
+    list<pair<VariableID, VariableValue> > stack;
+    if (proof)
+        proof->set_active_stack(&stack);
+
+    search(0, result, model, proof, stack);
 
     if (proof && result.solution.empty()) {
         proof->proof_stream() << "c " << proof->last_proof_line() << " 0" << endl;

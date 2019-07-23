@@ -7,6 +7,7 @@
 
 #include <exception>
 #include <iosfwd>
+#include <list>
 #include <memory>
 #include <string>
 
@@ -28,7 +29,7 @@ class Proof
         std::unique_ptr<Imp> _imp;
 
     public:
-        Proof(const std::string & opb_file, const std::string & log_file);
+        Proof(const std::string & opb_file, const std::string & log_file, bool asserty);
         Proof(Proof &&);
         ~Proof();
         auto operator= (Proof &&) -> Proof &;
@@ -65,6 +66,12 @@ class Proof
 
         auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> int;
         auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> int;
+
+        auto set_active_stack(const std::list<std::pair<VariableID, VariableValue> > *) -> void;
+        auto assert_what_we_just_did(const std::string &) -> void;
+        auto assert_we_proved_var_not_equal_value(VariableID, VariableValue, const std::string &) -> void;
+
+        auto asserty() const -> bool;
 };
 
 #endif

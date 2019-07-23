@@ -48,11 +48,16 @@ struct Proof::Imp
     map<VariableID, int> variable_takes_at_least_one_value, variable_takes_at_most_one_value;
     list<map<pair<VariableID, VariableValue>, int> > var_not_equal_value;
     map<pair<VariableID, VariableValue>, int> vv_mapping;
+
+    const list<pair<VariableID, VariableValue> > * active_stack;
+
+    bool asserty = false;
 };
 
-Proof::Proof(const string & opb, const string & log)
+Proof::Proof(const string & opb, const string & log, bool asserty)
 {
     _imp = make_unique<Proof::Imp>();
+    _imp->asserty = asserty;
 
     _imp->opb_file.open(opb);
     if (! _imp->opb_file)
@@ -161,6 +166,9 @@ auto Proof::line_for_var_not_equal_value(VariableID v, VariableValue n) -> int
 auto Proof::proved_var_not_equal_value(VariableID v, VariableValue n, int l) -> void
 {
     _imp->var_not_equal_value.back().emplace(pair{ v, n }, l);
+    if (_imp->asserty) {
+        assert_we_proved_var_not_equal_value(v, n, "storing conflict line");
+    }
 }
 
 auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> int
@@ -191,5 +199,63 @@ auto Proof::line_for_var_val_is_at_most_one(VariableID n, VariableValue v) const
 auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) const -> int
 {
     return _imp->variable_axioms_start + 2 * _imp->vv_mapping.find(pair{ n, v })->second - 1;
+}
+
+auto Proof::assert_what_we_just_did(const string & why) -> void
+{
+    proof_stream() << "* verifying that the conflict generated is what we expect, " << why << endl;
+    auto recover_line = last_proof_line();
+    proof_stream() << "p " << last_proof_line();
+    for (auto & [ var, val ] : *_imp->active_stack)
+        proof_stream() << " " << line_for_var_val_is_at_most_one(var, val) << " 1000 * +";
+    proof_stream() << " 0" << endl;
+    next_proof_line();
+    proof_stream() << "p " << last_proof_line() << " 1001 d 0" << endl;
+    next_proof_line();
+
+    proof_stream() << "e " << last_proof_line() << " opb";
+    for (auto & [ var, val ] : *_imp->active_stack)
+        proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
+    proof_stream() << " >= 1 ;" << endl;
+
+    proof_stream() << "p " << recover_line << " 0 + 0" << endl;
+    next_proof_line();
+
+    proof_stream() << "* end of verification" << endl;
+}
+
+auto Proof::assert_we_proved_var_not_equal_value(VariableID var, VariableValue val,
+        const string & why) -> void
+{
+    proof_stream() << "* verifying that we just proved var " << int{ var } << " not equal value " << int{ val } << ", x" << variable_value_mapping(var, val) << ", " << why << endl;
+    auto recover_line = last_proof_line();
+    proof_stream() << "p " << last_proof_line();
+    for (auto & [ var, val ] : *_imp->active_stack)
+        proof_stream() << " " << line_for_var_val_is_at_most_one(var, val) << " 1000 * +";
+    proof_stream() << " 0" << endl;
+    next_proof_line();
+    proof_stream() << "p " << last_proof_line() << " 1001 d 0" << endl;
+    next_proof_line();
+
+    proof_stream() << "e " << last_proof_line() << " opb";
+    for (auto & [ var, val ] : *_imp->active_stack)
+        proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
+    proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
+    proof_stream() << " >= 1 ;" << endl;
+
+    proof_stream() << "p " << recover_line << " 0 + 0" << endl;
+    next_proof_line();
+
+    proof_stream() << "* end of verification" << endl;
+}
+
+auto Proof::set_active_stack(const list<pair<VariableID, VariableValue> > * s) -> void
+{
+    _imp->active_stack = s;
+}
+
+auto Proof::asserty() const -> bool
+{
+    return _imp->asserty;
 }
 
