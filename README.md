@@ -23,9 +23,9 @@ An input file looks like this:
 
 ```
 # Create two variables named a and b, each with
-# domains { 1, 2, 3 }
-intvar a 1 3
-intvar b 1 3
+# domains { 1, 2, 3, 4 }
+intvar a 1 4
+intvar b { 1 2 3 4 }
 # Post the constraint a != b
 notequal a b
 ```

@@ -13,6 +13,7 @@
 struct Variable
 {
     Variable(int lw, int ub);
+    explicit Variable(const std::set<int> & values);
     Variable(const Variable &);
     ~Variable();
 

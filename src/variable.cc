@@ -24,6 +24,15 @@ Variable::Variable(int lw, int ub)
     values = *v;
 }
 
+Variable::Variable(const set<int> & r)
+{
+    auto v = make_shared<set<VariableValue> >();
+    for (auto & w : r)
+        v->insert(VariableValue{ w });
+    original_values = v;
+    values = *v;
+}
+
 Variable::~Variable() = default;
 
 Variable::Variable(const Variable &) = default;

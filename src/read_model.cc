@@ -12,6 +12,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -19,7 +20,9 @@ using std::ifstream;
 using std::make_shared;
 using std::map;
 using std::move;
+using std::set;
 using std::string;
+using std::stringstream;
 using std::to_string;
 using std::vector;
 
@@ -62,11 +65,34 @@ auto read_model(const string & filename) -> Model
     while (infile >> word) {
         if (word == "intvar") {
             string name;
-            int lb, ub;
-            if (! (infile >> name >> lb >> ub))
+            string op;
+            if (! (infile >> name >> op))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
-            if (! model.add_variable(name, make_name(name), make_shared<Variable>(lb, ub)))
-                throw InputError{ "Duplicate variable '" + name + "'" };
+            if (op == "{") {
+                string v;
+                set<int> values;
+                while (true) {
+                    if (! (infile >> v))
+                        throw InputError{ "Bad arguments to '" + word + "' command" };
+                    if (v == "}")
+                        break;
+                    stringstream ss{ v };
+                    int val;
+                    if (! (ss >> val))
+                        throw InputError{ "Bad arguments to '" + word + "' command" };
+                    values.insert(val);
+                }
+                if (! model.add_variable(name, make_name(name), make_shared<Variable>(values)))
+                    throw InputError{ "Duplicate variable '" + name + "'" };
+            }
+            else {
+                stringstream s{ op };
+                int lb, ub;
+                if (! (s >> lb) || ! (infile >> ub))
+                    throw InputError{ "Bad arguments to '" + word + "' command" };
+                if (! model.add_variable(name, make_name(name), make_shared<Variable>(lb, ub)))
+                    throw InputError{ "Duplicate variable '" + name + "'" };
+            }
         }
         else if (word == "intvararray") {
             string name;
@@ -154,6 +180,7 @@ auto read_model(const string & filename) -> Model
                     throw InputError{ "Bad arguments to '" + word + "' command" };
                 vars.push_back(get_name(var));
             }
+
             auto constraint = make_shared<AllDifferentConstraint>(move(vars));
             model.add_constraint(constraint);
         }
