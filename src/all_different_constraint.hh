@@ -14,7 +14,7 @@ class AllDifferentConstraint : public Constraint
 {
     private:
         std::vector<VariableID> _vars;
-        std::map<std::tuple<VariableID, VariableID, VariableValue>, int> _constraint_numbers;
+        std::map<VariableValue, int> _constraint_numbers;
 
     public:
         explicit AllDifferentConstraint(std::vector<VariableID> &&);

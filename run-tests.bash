@@ -150,5 +150,16 @@ if ! grep '^status = true$' <(./certified_constraint_solver models/sudoku.model 
     exit 1
 fi
 
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = false$' <(./certified_constraint_solver models/hardsudoku.model --prove --asserty ) ; then
+        echo "hardsudoku test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/hardsudoku.opb models/hardsudoku.log ; then
+        echo "hardsudoku refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/hardsudoku.opb models/hardsudoku.log
+fi
+
 true
 
