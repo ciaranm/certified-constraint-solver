@@ -50,9 +50,17 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
             branch_variable->values = {{ v }};
 
             if (proof) {
-                proof->proof_stream() << "* guessing x" << proof->variable_value_mapping(branch_variable_name, v) << endl;
+                stack.push_back(pair{ branch_variable_name, v });
+
+                proof->proof_stream() << "* guessing";
+                for (auto & [ s, t ] : stack)
+                    proof->proof_stream() << " " << model.original_name(s) << "=" << int{ t }
+                        << " (" << "x" + to_string(proof->variable_value_mapping(s, t)) << ")";
+                proof->proof_stream() << endl;
+
                 proof->push_context();
 
+                // generate conflict clauses for everything that has already been removed from the domain
                 for (auto & w : *branch_variable->original_values)
                     if (w != v) {
                         proof->proof_stream() << "p " << proof->line_for_var_takes_at_most_one_value(branch_variable_name);

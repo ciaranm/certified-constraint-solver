@@ -42,6 +42,7 @@ class Model
 
         auto get_variable(VariableID) const -> std::shared_ptr<Variable>;
         auto select_branch_variable() const -> std::pair<VariableID, std::shared_ptr<Variable> >;
+        auto original_name(VariableID) const -> std::string;
 
         auto save_result(Result &) const -> void;
 

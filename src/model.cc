@@ -111,8 +111,10 @@ auto Model::save_result(Result & result) const -> void
 
 auto Model::start_proof(Proof & proof) const -> void
 {
-    for (auto & [ name, v ] : _imp->vars)
+    for (auto & [ name, v ] : _imp->vars) {
+        proof.model_stream() << "* variable " << original_name(name) << endl;
         v->start_proof(name, proof);
+    }
 
     for (auto & c : *_imp->constraints)
         c->start_proof(*this, proof);
@@ -157,5 +159,10 @@ auto Model::propagate(optional<Proof> & proof) -> bool
     }
 
     return true;
+}
+
+auto Model::original_name(VariableID v) const -> std::string
+{
+    return _imp->variable_id_to_name->find(v)->second;
 }
 
