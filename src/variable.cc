@@ -39,11 +39,11 @@ Variable::Variable(const Variable &) = default;
 
 auto Variable::start_proof(VariableID name, Proof & proof) const -> void
 {
-    list<int> indices;
+    list<UnderlyingVariableID> indices;
 
     // record the variables in the opb file
     for (auto & v : values) {
-        int idx = proof.create_variable_value_mapping(name, v);
+        UnderlyingVariableID idx = proof.create_variable_value_mapping(name, v);
         indices.push_back(idx);
     }
 

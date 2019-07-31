@@ -39,15 +39,15 @@ struct Proof::Imp
     ofstream log_file;
     stringstream opb_body_file;
 
-    int model_constraints_line = 0;
-    int number_of_variables = 0;
-    int proof_line = 0;
-    int variable_axioms_start = 0;
+    ProofLineNumber model_constraints_line{ 0 };
+    UnderlyingVariableID number_of_variables{ 0 };
+    ProofLineNumber proof_line{ 0 };
+    ProofLineNumber variable_axioms_start{ 0 };
     int anonymous_variables = 66666;
 
-    map<VariableID, int> variable_takes_at_least_one_value, variable_takes_at_most_one_value;
-    list<map<pair<VariableID, VariableValue>, int> > var_not_equal_value;
-    map<pair<VariableID, VariableValue>, int> vv_mapping;
+    map<VariableID, ProofLineNumber> variable_takes_at_least_one_value, variable_takes_at_most_one_value;
+    list<map<pair<VariableID, VariableValue>, ProofLineNumber> > var_not_equal_value;
+    map<pair<VariableID, VariableValue>, UnderlyingVariableID> vv_mapping;
 
     const list<pair<VariableID, VariableValue> > * active_stack;
 
@@ -85,39 +85,41 @@ auto Proof::write_header() -> void
 auto Proof::load_problem_constraints() -> void
 {
     proof_stream() << "f " << _imp->model_constraints_line << " 0" << endl;
-    _imp->proof_line += _imp->model_constraints_line;
+    _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line} + int{ _imp->model_constraints_line } };
 }
 
 auto Proof::load_variable_axioms() -> void
 {
     proof_stream() << "l " << _imp->number_of_variables << " 0" << endl;
     _imp->variable_axioms_start = _imp->proof_line;
-    _imp->proof_line += (_imp->number_of_variables * 2);
+    _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line } + (int{ _imp->number_of_variables } * 2) };
 }
 
-auto Proof::create_variable_value_mapping(VariableID n, VariableValue v) -> int
+auto Proof::create_variable_value_mapping(VariableID n, VariableValue v) -> UnderlyingVariableID
 {
-    _imp->vv_mapping.emplace(pair{ n, v }, ++_imp->number_of_variables);
+    _imp->number_of_variables = UnderlyingVariableID{ int{ _imp->number_of_variables } + 1 };
+    _imp->vv_mapping.emplace(pair{ n, v }, _imp->number_of_variables);
     return _imp->number_of_variables;
 }
 
-auto Proof::create_anonymous_extra_variable() -> int
+auto Proof::create_anonymous_extra_variable() -> UnderlyingVariableID
 {
-    _imp->vv_mapping.emplace(pair{ VariableID{ _imp->anonymous_variables++ }, 0 }, ++_imp->number_of_variables);
+    _imp->number_of_variables = UnderlyingVariableID{ int{ _imp->number_of_variables } + 1 };
+    _imp->vv_mapping.emplace(pair{ VariableID{ _imp->anonymous_variables++ }, 0 }, _imp->number_of_variables);
     return _imp->number_of_variables;
 }
 
-auto Proof::variable_value_mapping(VariableID n, VariableValue v) const -> int
+auto Proof::variable_value_mapping(VariableID n, VariableValue v) const -> UnderlyingVariableID
 {
     return _imp->vv_mapping.find(pair{ n, v })->second;
 }
 
-auto Proof::wrote_variable_takes_at_least_one_value(VariableID n, int v) -> void
+auto Proof::wrote_variable_takes_at_least_one_value(VariableID n, ProofLineNumber v) -> void
 {
     _imp->variable_takes_at_least_one_value.emplace(n, v);
 }
 
-auto Proof::wrote_variable_takes_at_most_one_value(VariableID n, int v) -> void
+auto Proof::wrote_variable_takes_at_most_one_value(VariableID n, ProofLineNumber v) -> void
 {
     _imp->variable_takes_at_most_one_value.emplace(n, v);
 }
@@ -127,14 +129,14 @@ auto Proof::model_stream() -> std::ostream &
     return _imp->opb_body_file;
 }
 
-auto Proof::last_model_line() const -> int
+auto Proof::last_model_line() const -> ProofLineNumber
 {
     return _imp->model_constraints_line;
 }
 
 auto Proof::next_model_line() -> void
 {
-    ++_imp->model_constraints_line;
+    _imp->model_constraints_line = ProofLineNumber{ int{ _imp->model_constraints_line } + 1 };
 }
 
 auto Proof::proof_stream() -> std::ostream &
@@ -142,17 +144,17 @@ auto Proof::proof_stream() -> std::ostream &
     return _imp->log_file;
 }
 
-auto Proof::last_proof_line() const -> int
+auto Proof::last_proof_line() const -> ProofLineNumber
 {
     return _imp->proof_line;
 }
 
 auto Proof::next_proof_line() -> void
 {
-    ++_imp->proof_line;
+    _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line} + 1 };
 }
 
-auto Proof::line_for_var_not_equal_value(VariableID v, VariableValue n) -> int
+auto Proof::line_for_var_not_equal_value(VariableID v, VariableValue n) -> ProofLineNumber
 {
     for (auto r = _imp->var_not_equal_value.rbegin() ; r != _imp->var_not_equal_value.rend() ; ++r) {
         auto w = r->find(pair{ v, n });
@@ -163,7 +165,7 @@ auto Proof::line_for_var_not_equal_value(VariableID v, VariableValue n) -> int
     throw ProofError{ "Don't have a stored reason" };
 }
 
-auto Proof::proved_var_not_equal_value(VariableID v, VariableValue n, int l) -> void
+auto Proof::proved_var_not_equal_value(VariableID v, VariableValue n, ProofLineNumber l) -> void
 {
     _imp->var_not_equal_value.back().emplace(pair{ v, n }, l);
     if (_imp->asserty) {
@@ -171,12 +173,12 @@ auto Proof::proved_var_not_equal_value(VariableID v, VariableValue n, int l) -> 
     }
 }
 
-auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> int
+auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> ProofLineNumber
 {
     return _imp->variable_takes_at_least_one_value.find(n)->second;
 }
 
-auto Proof::line_for_var_takes_at_most_one_value(VariableID n) -> int
+auto Proof::line_for_var_takes_at_most_one_value(VariableID n) -> ProofLineNumber
 {
     return _imp->variable_takes_at_most_one_value.find(n)->second;
 }
@@ -191,14 +193,14 @@ auto Proof::pop_context() -> void
     _imp->var_not_equal_value.pop_back();
 }
 
-auto Proof::line_for_var_val_is_at_most_one(VariableID n, VariableValue v) const -> int
+auto Proof::line_for_var_val_is_at_most_one(VariableID n, VariableValue v) const -> ProofLineNumber
 {
-    return _imp->variable_axioms_start + 2 * _imp->vv_mapping.find(pair{ n, v })->second;
+    return ProofLineNumber{ int{ _imp->variable_axioms_start } + 2 * int{ _imp->vv_mapping.find(pair{ n, v })->second } };
 }
 
-auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) const -> int
+auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) const -> ProofLineNumber
 {
-    return _imp->variable_axioms_start + 2 * _imp->vv_mapping.find(pair{ n, v })->second - 1;
+    return ProofLineNumber{ int{ _imp->variable_axioms_start } + 2 * int{ _imp->vv_mapping.find(pair{ n, v })->second } - 1 };
 }
 
 auto Proof::assert_what_we_just_did(const string & why) -> void

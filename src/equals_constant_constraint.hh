@@ -10,7 +10,7 @@ class EqualConstantConstraint : public Constraint
     private:
         VariableID _first;
         VariableValue _second;
-        int _constraint_number;
+        ProofLineNumber _constraint_number;
 
     public:
         EqualConstantConstraint(VariableID, VariableValue);

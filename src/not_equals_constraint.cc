@@ -38,7 +38,7 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<V
                 if (proof) {
                     // m must take a single value o_cannot_be. we know m must take
                     // at least one value...
-                    set<int> conflicts;
+                    set<ProofLineNumber> conflicts;
                     // and we know it cannot take any of the other values...
                     for (auto & v : *m.original_values)
                         if (v != o_cannot_be)

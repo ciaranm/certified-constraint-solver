@@ -3,6 +3,7 @@
 #ifndef CERTIFIED_CONSTRAINT_SOLVER_GUARD_SRC_PROOF_HH
 #define CERTIFIED_CONSTRAINT_SOLVER_GUARD_SRC_PROOF_HH 1
 
+#include "proof-fwd.hh"
 #include "variable-fwd.hh"
 
 #include <exception>
@@ -41,31 +42,31 @@ class Proof
         auto load_problem_constraints() -> void;
         auto load_variable_axioms() -> void;
 
-        auto create_anonymous_extra_variable() -> int;
-        auto create_variable_value_mapping(VariableID, VariableValue) -> int;
-        auto variable_value_mapping(VariableID, VariableValue) const -> int;
-        auto wrote_variable_takes_at_least_one_value(VariableID, int) -> void;
-        auto wrote_variable_takes_at_most_one_value(VariableID, int) -> void;
+        auto create_anonymous_extra_variable() -> UnderlyingVariableID;
+        auto create_variable_value_mapping(VariableID, VariableValue) -> UnderlyingVariableID;
+        auto variable_value_mapping(VariableID, VariableValue) const -> UnderlyingVariableID;
+        auto wrote_variable_takes_at_least_one_value(VariableID, ProofLineNumber) -> void;
+        auto wrote_variable_takes_at_most_one_value(VariableID, ProofLineNumber) -> void;
 
         auto model_stream() -> std::ostream &;
-        auto last_model_line() const -> int;
+        [[ nodiscard ]] auto last_model_line() const -> ProofLineNumber;
         auto next_model_line() -> void;
 
         auto push_context() -> void;
         auto pop_context() -> void;
 
         auto proof_stream() -> std::ostream &;
-        [[ nodiscard ]] auto last_proof_line() const -> int;
+        [[ nodiscard ]] auto last_proof_line() const -> ProofLineNumber;
         auto next_proof_line() -> void;
 
-        auto line_for_var_not_equal_value(VariableID, VariableValue) -> int;
-        auto proved_var_not_equal_value(VariableID, VariableValue, int) -> void;
+        auto line_for_var_not_equal_value(VariableID, VariableValue) -> ProofLineNumber;
+        auto proved_var_not_equal_value(VariableID, VariableValue, ProofLineNumber) -> void;
 
-        auto line_for_var_takes_at_least_one_value(VariableID) -> int;
-        auto line_for_var_takes_at_most_one_value(VariableID) -> int;
+        auto line_for_var_takes_at_least_one_value(VariableID) -> ProofLineNumber;
+        auto line_for_var_takes_at_most_one_value(VariableID) -> ProofLineNumber;
 
-        auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> int;
-        auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> int;
+        auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> ProofLineNumber;
+        auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> ProofLineNumber;
 
         auto set_active_stack(const std::list<std::pair<VariableID, VariableValue> > *) -> void;
         auto assert_what_we_just_did(const std::string &) -> void;

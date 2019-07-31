@@ -55,7 +55,7 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<Vari
 
     if (proof) {
         // show that every control tuple has to be selected
-        vector<int> controls;
+        vector<ProofLineNumber> controls;
         for (unsigned t = 0 ; t < _table->allowed_tuples.size() ; ++t) {
             // check this isn't an infeasible tuple not listed in the model
             auto c =  _constraint_for_tuple.find(t);
@@ -99,7 +99,7 @@ auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
     // only write out feasible tuples. for each tuple, we have a control
     // variable, and either it is selected, or its control variable is
     // selected.
-    vector<int> controls;
+    vector<UnderlyingVariableID> controls;
     for (unsigned t = 0 ; t < _table->allowed_tuples.size() ; ++t) {
         bool is_feasible = true;
         for (int i = 0 ; i < _table->arity ; ++i)
@@ -112,7 +112,7 @@ auto TableConstraint::start_proof(const Model & model, Proof & proof) -> void
             continue;
 
         // either we pick this tuple, or we pick its control variable
-        int control_idx = proof.create_anonymous_extra_variable();
+        UnderlyingVariableID control_idx = proof.create_anonymous_extra_variable();
         controls.push_back(control_idx);
 
         proof.model_stream() << _table->arity << " x" << control_idx;

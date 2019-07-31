@@ -23,9 +23,9 @@ class TableConstraint : public Constraint
         int _arity;
         std::vector<VariableID> _vars;
         std::shared_ptr<const Table> _table;
-        std::map<std::vector<VariableValue>, int> _var_for_tuple;
-        std::map<int, int> _constraint_for_tuple;
-        int _must_have_one_constraint;
+        std::map<std::vector<VariableValue>, UnderlyingVariableID> _var_for_tuple;
+        std::map<int, ProofLineNumber > _constraint_for_tuple;
+        ProofLineNumber _must_have_one_constraint;
 
     public:
         explicit TableConstraint(const std::shared_ptr<const Table> &);

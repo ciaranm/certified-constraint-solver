@@ -18,7 +18,6 @@ using std::optional;
 using std::pair;
 using std::set;
 using std::string;
-using std::to_string;
 
 auto search(int depth, Result & result, const Model & start_model, optional<Proof> & proof, list<pair<VariableID, VariableValue> > & stack) -> void
 {
@@ -43,7 +42,7 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
         if (proof)
             proof->proof_stream() << "* branching at depth " << depth << endl;
 
-        set<int> conflicts;
+        set<ProofLineNumber> conflicts;
         auto possible_values = branch_variable->values;
         branch_variable->values.clear();
         for (auto & v : possible_values) {
@@ -55,7 +54,7 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                 proof->proof_stream() << "* guessing";
                 for (auto & [ s, t ] : stack)
                     proof->proof_stream() << " " << model.original_name(s) << "=" << int{ t }
-                        << " (" << "x" + to_string(proof->variable_value_mapping(s, t)) << ")";
+                        << " (" << "x" << proof->variable_value_mapping(s, t) << ")";
                 proof->proof_stream() << endl;
 
                 proof->push_context();
