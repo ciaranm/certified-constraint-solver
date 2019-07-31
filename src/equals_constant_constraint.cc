@@ -23,7 +23,7 @@ auto EqualConstantConstraint::propagate(Model & model, optional<Proof> & proof, 
 
     if (proof) {
         if (f->values.size() > 1 || (f->values.size() == 1 && *f->values.begin() != _second))
-            proof->proof_stream() << "* equals" << endl;
+            proof->proof_stream() << "* equals " << model.original_name(_first) << " = " << int{ _second } << endl;
 
         for (auto & v : f->values)
             if (v != _second) {
