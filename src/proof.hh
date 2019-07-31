@@ -55,7 +55,7 @@ class Proof
         auto pop_context() -> void;
 
         auto proof_stream() -> std::ostream &;
-        auto last_proof_line() const -> int;
+        [[ nodiscard ]] auto last_proof_line() const -> int;
         auto next_proof_line() -> void;
 
         auto line_for_var_not_equal_value(VariableID, VariableValue) -> int;
