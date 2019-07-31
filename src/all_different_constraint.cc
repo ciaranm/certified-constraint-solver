@@ -197,18 +197,9 @@ auto AllDifferentConstraint::_prove_matching_is_too_small(
     }
 
     proof.proof_stream() << "* found a hall violator" << endl;
-    proof.proof_stream() << "* variables:";
-    for (auto & v : hall_variables)
-        proof.proof_stream() << " " << model.original_name(v);
-    proof.proof_stream() << endl;
-    proof.proof_stream() << "* values:";
-    for (auto & v : hall_values)
-        proof.proof_stream() << " " << int{ v };
-    proof.proof_stream() << endl;
 
     // each variable in the violator has to take at least one value that is
     // left in its domain...
-    proof.proof_stream() << "* all different, failed matching, lhs" << endl;
     map<VariableID, int> left_proofs;
     for (auto & v : hall_variables) {
         auto var = model.get_variable(v);
@@ -217,22 +208,12 @@ auto AllDifferentConstraint::_prove_matching_is_too_small(
         for (auto & w : *var->original_values)
             if (! var->values.count(w))
                 proof.proof_stream() << " " << proof.line_for_var_not_equal_value(v, w) << " +";
-        proof.proof_stream() << " 0" << endl;
-        proof.next_proof_line();
-        proof.proof_stream() << "p " << proof.last_proof_line() << " " << (var->original_values->size() + 1) << " d 0" << endl;
+        proof.proof_stream() << " " << (var->original_values->size() + 1) << " d 0" << endl;
         proof.next_proof_line();
         left_proofs.emplace(v, proof.last_proof_line());
     }
 
-    proof.proof_stream() << "p 0";
-    for (auto & [ _, l] : left_proofs)
-        proof.proof_stream() << " " << l << " +";
-    proof.proof_stream() << " 0" << endl;
-    proof.next_proof_line();
-    auto first_proof_part = proof.last_proof_line();
-
     // each value in the component can only be used once
-    proof.proof_stream() << "* all different, failed matching, rhs" << endl;
     proof.proof_stream() << "p 0 ";
     for (auto & v : hall_values) {
         proof.proof_stream() << _constraint_numbers.find(v)->second << " + ";
@@ -246,12 +227,11 @@ auto AllDifferentConstraint::_prove_matching_is_too_small(
             if (hall_values.count(w) && ((! hall_variables.count(v)) || ! var->values.count(w)))
                 proof.proof_stream() << " " << proof.line_for_var_val_is_at_least_zero(v, w) << " +";
     }
-    proof.proof_stream() << " 0" << endl;
-    proof.next_proof_line();
 
-    // bring it together
-    proof.proof_stream() << "* all different, failed matching, bringing it together" << endl;
-    proof.proof_stream() << "p " << first_proof_part << " " << proof.last_proof_line() << " + " << (left_proofs.size() + 1) << " d 0" << endl;
+    for (auto & [ _, l] : left_proofs)
+        proof.proof_stream() << " " << l << " +";
+
+    proof.proof_stream() << " " << (left_proofs.size() + 1) << " d 0" << endl;
     proof.next_proof_line();
 }
 
