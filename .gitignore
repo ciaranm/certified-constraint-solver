@@ -1,4 +1,5 @@
 intermediate
 certified_constraint_solver
 models/*.opb
+models/*.verify
 *.log

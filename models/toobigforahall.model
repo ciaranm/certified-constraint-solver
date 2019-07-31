@@ -1,0 +1,5 @@
+intvar a 1 10
+intvar b 1 9
+intvar c 1 8
+intvar d 1 7
+alldifferent 4 a b c d

@@ -151,6 +151,50 @@ if ! grep '^status = true$' <(./certified_constraint_solver models/sudoku.model 
 fi
 
 if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = true$' <(./certified_constraint_solver models/hallunit.model --prove --asserty ) ; then
+        echo "hallunit test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/hallunit.opb models/hallunit.log ; then
+        echo "hallunit refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/hallunit.opb models/hallunit.log
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = true$' <(./certified_constraint_solver models/hall.model --prove --asserty ) ; then
+        echo "hall test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/hall.opb models/hall.log ; then
+        echo "hall refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/hall.opb models/hall.log
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = true$' <(./certified_constraint_solver models/hall2.model --prove --asserty ) ; then
+        echo "hall2 test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/hall2.opb models/hall2.log ; then
+        echo "hall2 refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/hall2.opb models/hall2.log
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
+    if ! grep '^status = true$' <(./certified_constraint_solver models/toobigforahall.model --prove --asserty ) ; then
+        echo "toobigforahall test failed" 1>&2
+        exit 1
+    elif ! ~/.local/bin/refpy models/toobigforahall.opb models/toobigforahall.log ; then
+        echo "toobigforahall refpy verification failed" 1>&2
+        exit 1
+    fi
+    rm -f models/toobigforahall.opb models/toobigforahall.log
+fi
+
+if [[ -x ~/.local/bin/refpy ]] ; then
     if ! grep '^status = false$' <(./certified_constraint_solver models/hardsudoku.model --prove --asserty ) ; then
         echo "hardsudoku test failed" 1>&2
         exit 1

@@ -1,0 +1,10 @@
+intvar x1 { 2 4 6 7 9 }
+intvar x2 { 4 6 8 }
+intvar x3 { 2 4 6 7 9 }
+intvar x4 { 1 }
+intvar x5 { 2 6 8 }
+intvar x6 { 2 6 8 }
+intvar x7 { 2 6 8 }
+intvar x8 { 3 }
+intvar x9 { 5 }
+alldifferent 9 x1 x2 x3 x4 x5 x6 x7 x8 x9

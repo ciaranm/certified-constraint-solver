@@ -1,0 +1,4 @@
+intvar a { 1 }
+intvar b { 1 2 3 }
+intvar c { 1 2 3 }
+alldifferent 3 a b c

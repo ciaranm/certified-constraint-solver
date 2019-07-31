@@ -6,6 +6,7 @@
 #include "constraint.hh"
 
 #include <map>
+#include <set>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -15,6 +16,15 @@ class AllDifferentConstraint : public Constraint
     private:
         std::vector<VariableID> _vars;
         std::map<VariableValue, int> _constraint_numbers;
+
+        auto _prove_matching_is_too_small(
+                Model &,
+                Proof &,
+                const std::set<std::pair<VariableID, VariableValue> > & edges,
+                const std::set<VariableID> & lhs,
+                const std::set<VariableID> & left_covered,
+                const std::set<std::pair<VariableID, VariableValue> > & matching
+                ) const -> void;
 
     public:
         explicit AllDifferentConstraint(std::vector<VariableID> &&);
