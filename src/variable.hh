@@ -5,6 +5,7 @@
 
 #include "variable-fwd.hh"
 #include "proof-fwd.hh"
+#include "model-fwd.hh"
 
 #include <memory>
 #include <set>
@@ -20,7 +21,7 @@ struct Variable
     std::shared_ptr<const std::set<VariableValue> > original_values;
     std::set<VariableValue> values;
 
-    auto start_proof(VariableID, Proof &) const -> void;
+    auto start_proof(const Model & model, VariableID, Proof &) const -> void;
 };
 
 #endif

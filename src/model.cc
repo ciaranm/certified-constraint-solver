@@ -111,10 +111,8 @@ auto Model::save_result(Result & result) const -> void
 
 auto Model::start_proof(Proof & proof) const -> void
 {
-    for (auto & [ name, v ] : _imp->vars) {
-        proof.model_stream() << "* variable " << original_name(name) << endl;
-        v->start_proof(name, proof);
-    }
+    for (auto & [ name, v ] : _imp->vars)
+        v->start_proof(*this, name, proof);
 
     for (auto & c : *_imp->constraints)
         c->start_proof(*this, proof);

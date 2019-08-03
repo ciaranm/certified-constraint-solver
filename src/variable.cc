@@ -2,6 +2,7 @@
 
 #include "variable.hh"
 #include "proof.hh"
+#include "model.hh"
 
 #include <list>
 #include <ostream>
@@ -37,18 +38,21 @@ Variable::~Variable() = default;
 
 Variable::Variable(const Variable &) = default;
 
-auto Variable::start_proof(VariableID name, Proof & proof) const -> void
+auto Variable::start_proof(const Model & model, VariableID name, Proof & proof) const -> void
 {
     list<UnderlyingVariableID> indices;
+
+    proof.model_stream() << "* variable " << model.original_name(name) << ":";
 
     // record the variables in the opb file
     for (auto & v : values) {
         UnderlyingVariableID idx = proof.create_variable_value_mapping(name, v);
         indices.push_back(idx);
+        proof.model_stream() << " (" << int{ v } << ", x" << idx << ")";
     }
+    proof.model_stream() << endl;
 
     // a variable must take exactly one value
-    proof.model_stream() << "* variable takes exactly one value" << endl;
 
     for (auto & i : indices)
         proof.model_stream() << "1 " << "x" << i << " ";
