@@ -109,3 +109,8 @@ auto NotEqualConstraint::associated_variables() const -> set<VariableID>
     return result;
 }
 
+
+auto NotEqualConstraint::priority() const -> int
+{
+    return 1;
+}

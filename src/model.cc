@@ -131,16 +131,16 @@ auto Model::add_constraint(shared_ptr<Constraint> c) -> void
 
 auto Model::propagate(optional<Proof> & proof) -> bool
 {
-    QueueSet<shared_ptr<Constraint> > q;
+    QueueSet<pair<int, shared_ptr<Constraint> > > q;
 
     // initially we have to revise every constraint
     for (auto & c : *_imp->constraints)
-        q.enqueue(c);
+        q.enqueue(pair{ c->priority(), c });
 
     // until we reach a fixed point...
     while (! q.empty()) {
         // get us a constraint to revise
-        auto c = q.dequeue();
+        auto [ _, c ] = q.dequeue();
 
         set<VariableID> changed_variables;
         if (! c->propagate(*this, proof, changed_variables))
@@ -152,7 +152,7 @@ auto Model::propagate(optional<Proof> & proof) -> bool
         for (auto & v : changed_variables) {
             auto to_requeue = _imp->constraints_associated_with->equal_range(v);
             for (auto d = to_requeue.first ; d != to_requeue.second ; ++d)
-                q.enqueue(d->second);
+                q.enqueue(pair{ d->second->priority(), d->second });
         }
     }
 

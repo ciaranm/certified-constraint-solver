@@ -28,6 +28,8 @@ struct Constraint
     virtual auto start_proof(const Model &, Proof &) -> void = 0;
 
     virtual auto associated_variables() const -> std::set<VariableID> = 0;
+
+    virtual auto priority() const -> int = 0;
 };
 
 #endif

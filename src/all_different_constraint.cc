@@ -510,3 +510,8 @@ auto AllDifferentConstraint::associated_variables() const -> set<VariableID>
     return result;
 }
 
+auto AllDifferentConstraint::priority() const -> int
+{
+    return 2;
+}
+

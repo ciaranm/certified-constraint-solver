@@ -79,4 +79,8 @@ auto EqualConstantConstraint::associated_variables() const -> set<VariableID>
     return result;
 }
 
+auto EqualConstantConstraint::priority() const -> int
+{
+    return 0;
+}
 

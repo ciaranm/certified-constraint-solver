@@ -23,6 +23,8 @@ class NotEqualConstraint : public Constraint
         virtual auto start_proof(const Model &, Proof &) -> void override;
 
         virtual auto associated_variables() const -> std::set<VariableID> override;
+
+        virtual auto priority() const -> int override;
 };
 
 #endif

@@ -141,3 +141,8 @@ auto TableConstraint::associated_variables() const -> set<VariableID>
     return result;
 }
 
+auto TableConstraint::priority() const -> int
+{
+    return 2;
+}
+
