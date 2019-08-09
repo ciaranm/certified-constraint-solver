@@ -1,7 +1,7 @@
 BUILD_DIR := intermediate
 TARGET_DIR := ./
 
-SUBMAKEFILES := src/certified_constraint_solver.mk
+SUBMAKEFILES := src/certified_constraint_solver.mk src/make_sudoku_model.mk
 
 override CXXFLAGS += -O3 -march=native -std=c++17 -Isrc/ -Istrong_typedef/ -W -Wall -g -ggdb3 -pthread
 

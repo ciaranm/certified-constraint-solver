@@ -1,5 +1,6 @@
 intermediate
 certified_constraint_solver
+make_sudoku_model
 models/*.opb
 models/*.verify
 *.log
