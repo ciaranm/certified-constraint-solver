@@ -33,8 +33,9 @@ using std::variant;
 using std::vector;
 using std::visit;
 
-AllDifferentConstraint::AllDifferentConstraint(vector<VariableID> && v) :
-    _vars(move(v))
+AllDifferentConstraint::AllDifferentConstraint(vector<VariableID> && v, AllDifferentStrength s) :
+    _vars(move(v)),
+    _strength(s)
 {
 }
 
@@ -266,219 +267,221 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, s
 
         return false;
     }
-    else {
-        // we have a matching that uses every variable. however, some edges may
-        // not occur in any maximum cardinality matching, and we can delete
-        // these. first we need to build the directed matching graph...
-        using Vertex = variant<VariableID, VariableValue>;
-        map<Vertex, list<Vertex> > edges_out_from;
-        map<VariableID, list<VariableValue> > edges_out_from_variable, edges_in_to_variable;
-        map<VariableValue, list<VariableID> > edges_out_from_value, edges_in_to_value;
 
-        for (auto & [ f, t ] : edges)
-            if (matching.count(pair{ f, t })) {
-                edges_out_from[t].push_back(f);
-                edges_out_from_value[t].push_back(f);
-                edges_in_to_variable[f].push_back(t);
-            }
-            else {
-                edges_out_from[f].push_back(t);
-                edges_out_from_variable[f].push_back(t);
-                edges_in_to_value[t].push_back(f);
-            }
+    if (_strength != AllDifferentStrength::GAC)
+        return true;
 
-        // now we need to find strongly connected components...
-        map<Vertex, int> indices, lowlinks, components;
-        list<Vertex> stack;
-        set<Vertex> enstackinated;
-        set<Vertex> all_vertices;
-        int next_index = 0, number_of_components = 0;
+    // we have a matching that uses every variable. however, some edges may
+    // not occur in any maximum cardinality matching, and we can delete
+    // these. first we need to build the directed matching graph...
+    using Vertex = variant<VariableID, VariableValue>;
+    map<Vertex, list<Vertex> > edges_out_from;
+    map<VariableID, list<VariableValue> > edges_out_from_variable, edges_in_to_variable;
+    map<VariableValue, list<VariableID> > edges_out_from_value, edges_in_to_value;
 
-        for (auto & v : _vars) {
-            all_vertices.emplace(v);
-            for (auto & w : model.get_variable(v)->values)
-                all_vertices.emplace(w);
+    for (auto & [ f, t ] : edges)
+        if (matching.count(pair{ f, t })) {
+            edges_out_from[t].push_back(f);
+            edges_out_from_value[t].push_back(f);
+            edges_in_to_variable[f].push_back(t);
+        }
+        else {
+            edges_out_from[f].push_back(t);
+            edges_out_from_variable[f].push_back(t);
+            edges_in_to_value[t].push_back(f);
         }
 
-        function<auto (Vertex) -> void> scc;
-        scc = [&] (Vertex v) -> void {
-            indices.emplace(v, next_index);
-            lowlinks.emplace(v, next_index);
-            ++next_index;
-            stack.emplace_back(v);
-            enstackinated.emplace(v);
+    // now we need to find strongly connected components...
+    map<Vertex, int> indices, lowlinks, components;
+    list<Vertex> stack;
+    set<Vertex> enstackinated;
+    set<Vertex> all_vertices;
+    int next_index = 0, number_of_components = 0;
 
-            for (auto & w : edges_out_from[v]) {
-                if (! indices.count(w)) {
-                    scc(w);
-                    lowlinks[v] = min(lowlinks[v], lowlinks[w]);
-                }
-                else if (enstackinated.count(w)) {
-                    lowlinks[v] = min(lowlinks[v], lowlinks[w]);
-                }
+    for (auto & v : _vars) {
+        all_vertices.emplace(v);
+        for (auto & w : model.get_variable(v)->values)
+            all_vertices.emplace(w);
+    }
+
+    function<auto (Vertex) -> void> scc;
+    scc = [&] (Vertex v) -> void {
+        indices.emplace(v, next_index);
+        lowlinks.emplace(v, next_index);
+        ++next_index;
+        stack.emplace_back(v);
+        enstackinated.emplace(v);
+
+        for (auto & w : edges_out_from[v]) {
+            if (! indices.count(w)) {
+                scc(w);
+                lowlinks[v] = min(lowlinks[v], lowlinks[w]);
             }
-
-            if (lowlinks[v] == indices[v]) {
-                Vertex w;
-                do {
-                    w = stack.back();
-                    stack.pop_back();
-                    enstackinated.erase(w);
-                    components.emplace(w, number_of_components);
-                } while (v != w);
-                ++number_of_components;
+            else if (enstackinated.count(w)) {
+                lowlinks[v] = min(lowlinks[v], lowlinks[w]);
             }
-        };
+        }
 
-        for (auto & v : all_vertices)
-            if (! indices.count(v))
-                scc(v);
+        if (lowlinks[v] == indices[v]) {
+            Vertex w;
+            do {
+                w = stack.back();
+                stack.pop_back();
+                enstackinated.erase(w);
+                components.emplace(w, number_of_components);
+            } while (v != w);
+            ++number_of_components;
+        }
+    };
 
-        // every edge in the original matching is used, and so cannot be
-        // deleted
-        auto used_edges = matching;
+    for (auto & v : all_vertices)
+        if (! indices.count(v))
+            scc(v);
 
-        // for each unmatched vertex, bring in everything that could be updated
-        // to take it
-        {
-            set<Vertex> to_explore{ rhs.begin(), rhs.end() }, explored;
-            for (auto & [ _, t ] : matching)
-                to_explore.erase(t);
+    // every edge in the original matching is used, and so cannot be
+    // deleted
+    auto used_edges = matching;
 
-            while (! to_explore.empty()) {
-                Vertex v = *to_explore.begin();
-                to_explore.erase(v);
-                explored.insert(v);
+    // for each unmatched vertex, bring in everything that could be updated
+    // to take it
+    {
+        set<Vertex> to_explore{ rhs.begin(), rhs.end() }, explored;
+        for (auto & [ _, t ] : matching)
+            to_explore.erase(t);
 
-                visit([&] (const auto & x) {
+        while (! to_explore.empty()) {
+            Vertex v = *to_explore.begin();
+            to_explore.erase(v);
+            explored.insert(v);
+
+            visit([&] (const auto & x) {
+                    if constexpr (is_same_v<decay_t<decltype(x)>, VariableID>) {
+                        for (auto & t : edges_in_to_variable[x]) {
+                            used_edges.emplace(x, t);
+                            if (! explored.count(t))
+                                to_explore.insert(t);
+                        }
+                    }
+                    else {
+                        for (auto & t : edges_in_to_value[x]) {
+                            used_edges.emplace(t, x);
+                            if (! explored.count(t))
+                                to_explore.insert(t);
+                        }
+                    }
+                    }, v);
+        }
+    }
+
+    // every edge that starts and ends in the same component is also used
+    for (auto & [ f, t ] : edges)
+        if (components.find(f)->second == components.find(t)->second)
+            used_edges.emplace(f, t);
+
+    // anything left can be deleted
+    for (auto & [ delete_var_name, delete_value ] : edges) {
+        if (used_edges.count(pair{ delete_var_name, delete_value }))
+            continue;
+
+        auto delete_var = model.get_variable(delete_var_name);
+        if (delete_var->values.count(delete_value)) {
+            if (proof) {
+                // we know a hall set exists, but we have to find it. starting
+                // from but not including the end of the edge we're deleting,
+                // everything reachable forms a hall set.
+                set<Vertex> to_explore, explored;
+                set<VariableID> hall_left;
+                set<VariableValue> hall_right;
+                to_explore.insert(delete_value);
+                while (! to_explore.empty()) {
+                    Vertex n = *to_explore.begin();
+                    to_explore.erase(n);
+                    explored.insert(n);
+
+                    visit([&] (const auto & x) -> void {
                         if constexpr (is_same_v<decay_t<decltype(x)>, VariableID>) {
-                            for (auto & t : edges_in_to_variable[x]) {
-                                used_edges.emplace(x, t);
+                            hall_left.emplace(x);
+                            for (auto & t : edges_out_from_variable[x]) {
                                 if (! explored.count(t))
                                     to_explore.insert(t);
                             }
                         }
                         else {
-                            for (auto & t : edges_in_to_value[x]) {
-                                used_edges.emplace(t, x);
+                            hall_right.emplace(x);
+                            for (auto & t : edges_out_from_value[x]) {
                                 if (! explored.count(t))
                                     to_explore.insert(t);
                             }
                         }
-                        }, v);
-            }
-        }
+                    }, n);
+                }
 
-        // every edge that starts and ends in the same component is also used
-        for (auto & [ f, t ] : edges)
-            if (components.find(f)->second == components.find(t)->second)
-                used_edges.emplace(f, t);
+                proof->proof_stream() << "* all different, found hall set, "
+                    << model.original_name(delete_var_name) << " not equal " << int{ delete_value } << endl;
 
-        // anything left can be deleted
-        for (auto & [ delete_var_name, delete_value ] : edges) {
-            if (used_edges.count(pair{ delete_var_name, delete_value }))
-                continue;
+                proof->proof_stream() << "p 0";
+                for (auto & h : hall_left)
+                    proof->proof_stream() << " " << proof->line_for_var_takes_at_least_one_value(h) << " +";
+                for (auto & w : hall_right)
+                    proof->proof_stream() << " " << _constraint_numbers.find(w)->second << " +";
 
-            auto delete_var = model.get_variable(delete_var_name);
-            if (delete_var->values.count(delete_value)) {
-                if (proof) {
-                    // we know a hall set exists, but we have to find it. starting
-                    // from but not including the end of the edge we're deleting,
-                    // everything reachable forms a hall set.
-                    set<Vertex> to_explore, explored;
-                    set<VariableID> hall_left;
-                    set<VariableValue> hall_right;
-                    to_explore.insert(delete_value);
-                    while (! to_explore.empty()) {
-                        Vertex n = *to_explore.begin();
-                        to_explore.erase(n);
-                        explored.insert(n);
+                int cancel_count = 0;
 
-                        visit([&] (const auto & x) -> void {
-                            if constexpr (is_same_v<decay_t<decltype(x)>, VariableID>) {
-                                hall_left.emplace(x);
-                                for (auto & t : edges_out_from_variable[x]) {
-                                    if (! explored.count(t))
-                                        to_explore.insert(t);
-                                }
-                            }
-                            else {
-                                hall_right.emplace(x);
-                                for (auto & t : edges_out_from_value[x]) {
-                                    if (! explored.count(t))
-                                        to_explore.insert(t);
-                                }
-                            }
-                        }, n);
+                // non-deletion, non-hall variables could have values in
+                // the hall set
+                for (auto & v : _vars) {
+                    if (v != delete_var_name && ! hall_left.count(v)) {
+                        auto var = model.get_variable(v);
+                        for (auto & w : *var->original_values)
+                            if (hall_right.count(w))
+                                proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(v, w) << " +";
                     }
+                }
 
-                    proof->proof_stream() << "* all different, found hall set, "
-                        << model.original_name(delete_var_name) << " not equal " << int{ delete_value } << endl;
+                // we might also be showing that the deletion variable
+                // cannot take the other values inside the hall set either,
+                // which is true but irrelevant for this particular
+                // deduction
+                for (auto & r : hall_right)
+                    if (r != delete_value && delete_var->original_values->count(r))
+                        proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(delete_var_name, r) << " +";
 
-                    proof->proof_stream() << "p 0";
-                    for (auto & h : hall_left)
-                        proof->proof_stream() << " " << proof->line_for_var_takes_at_least_one_value(h) << " +";
-                    for (auto & w : hall_right)
-                        proof->proof_stream() << " " << _constraint_numbers.find(w)->second << " +";
-
-                    int cancel_count = 0;
-
-                    // non-deletion, non-hall variables could have values in
-                    // the hall set
-                    for (auto & v : _vars) {
-                        if (v != delete_var_name && ! hall_left.count(v)) {
-                            auto var = model.get_variable(v);
-                            for (auto & w : *var->original_values)
-                                if (hall_right.count(w))
-                                    proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(v, w) << " +";
+                // hall variables could have values not in the hall set,
+                // in which case they have been eliminated previously
+                for (auto & h : hall_left) {
+                    auto var = model.get_variable(h);
+                    for (auto & v : *var->original_values)
+                        if (! hall_right.count(v)) {
+                            ++cancel_count;
+                            proof->proof_stream() << " " << proof->line_for_var_not_equal_value(h, v) << " +";
                         }
-                    }
+                }
 
-                    // we might also be showing that the deletion variable
-                    // cannot take the other values inside the hall set either,
-                    // which is true but irrelevant for this particular
-                    // deduction
-                    for (auto & r : hall_right)
-                        if (r != delete_value && delete_var->original_values->count(r))
-                            proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(delete_var_name, r) << " +";
+                proof->proof_stream() << " " << (cancel_count + 1) << " d 0" << endl;
+                proof->next_proof_line();
+                proof->proved_var_not_equal_value(delete_var_name, delete_value, proof->last_proof_line());
+            }
 
-                    // hall variables could have values not in the hall set,
-                    // in which case they have been eliminated previously
-                    for (auto & h : hall_left) {
-                        auto var = model.get_variable(h);
-                        for (auto & v : *var->original_values)
-                            if (! hall_right.count(v)) {
-                                ++cancel_count;
-                                proof->proof_stream() << " " << proof->line_for_var_not_equal_value(h, v) << " +";
-                            }
-                    }
+            delete_var->values.erase(delete_value);
+            changed_vars.emplace(delete_var_name);
 
-                    proof->proof_stream() << " " << (cancel_count + 1) << " d 0" << endl;
+            // have we triggered a domain wipeout? if so, not point in
+            // doing the rest of the propagation
+            if (delete_var->values.empty()) {
+                if (proof) {
+                    proof->proof_stream() << "* all different, domain wipeout" << endl;
+                    proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(delete_var_name);
+                    for (auto & v : *delete_var->original_values)
+                        proof->proof_stream() << " " << proof->line_for_var_not_equal_value(delete_var_name, v) << " +";
+                    proof->proof_stream() << " " << (delete_var->original_values->size() + 1) << " d 0" << endl;
                     proof->next_proof_line();
-                    proof->proved_var_not_equal_value(delete_var_name, delete_value, proof->last_proof_line());
                 }
-
-                delete_var->values.erase(delete_value);
-                changed_vars.emplace(delete_var_name);
-
-                // have we triggered a domain wipeout? if so, not point in
-                // doing the rest of the propagation
-                if (delete_var->values.empty()) {
-                    if (proof) {
-                        proof->proof_stream() << "* all different, domain wipeout" << endl;
-                        proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(delete_var_name);
-                        for (auto & v : *delete_var->original_values)
-                            proof->proof_stream() << " " << proof->line_for_var_not_equal_value(delete_var_name, v) << " +";
-                        proof->proof_stream() << " " << (delete_var->original_values->size() + 1) << " d 0" << endl;
-                        proof->next_proof_line();
-                    }
-                    return false;
-                }
+                return false;
             }
         }
-
-        return true;
     }
+
+    return true;
 }
 
 auto AllDifferentConstraint::start_proof(const Model & model, Proof & proof) -> void

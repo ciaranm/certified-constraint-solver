@@ -168,7 +168,11 @@ auto read_model(const string & filename) -> Model
             }
             model.add_constraint(constraint);
         }
-        else if (word == "alldifferent") {
+        else if (word == "alldifferent" || word == "alldifferentmatching") {
+            AllDifferentStrength strength = AllDifferentStrength::GAC;
+            if (word == "alldifferentmatching")
+                strength = AllDifferentStrength::Matching;
+
             int number;
             if (! (infile >> number))
                 throw InputError{ "Bad arguments to '" + word + "' command" };
@@ -181,7 +185,7 @@ auto read_model(const string & filename) -> Model
                 vars.push_back(get_name(var));
             }
 
-            auto constraint = make_shared<AllDifferentConstraint>(move(vars));
+            auto constraint = make_shared<AllDifferentConstraint>(move(vars), strength);
             model.add_constraint(constraint);
         }
         else if (word == "#") {

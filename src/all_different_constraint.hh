@@ -11,11 +11,18 @@
 #include <tuple>
 #include <vector>
 
+enum class AllDifferentStrength
+{
+    Matching,
+    GAC
+};
+
 class AllDifferentConstraint : public Constraint
 {
     private:
         std::vector<VariableID> _vars;
         std::map<VariableValue, int> _constraint_numbers;
+        AllDifferentStrength _strength;
 
         auto _prove_matching_is_too_small(
                 Model &,
@@ -27,7 +34,7 @@ class AllDifferentConstraint : public Constraint
                 ) const -> void;
 
     public:
-        explicit AllDifferentConstraint(std::vector<VariableID> &&);
+        AllDifferentConstraint(std::vector<VariableID> &&, AllDifferentStrength);
         virtual ~AllDifferentConstraint() override;
 
         virtual auto propagate(Model & model, std::optional<Proof> &, std::set<VariableID> &) const -> bool override;
