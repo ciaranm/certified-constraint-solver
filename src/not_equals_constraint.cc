@@ -28,33 +28,13 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<V
 {
     bool changed = false;
 
-    auto half_propagate = [&] (Variable & m, const VariableID & my_name, Variable & o, const VariableID & other_name) {
+    auto half_propagate = [&] (Variable & m, const VariableID &, Variable & o, const VariableID & other_name) {
         if (m.values.size() == 1) {
             auto o_cannot_be = *m.values.begin();
             if (o.values.count(o_cannot_be)) {
                 o.values.erase(o_cannot_be);
                 changed_vars.insert(other_name);
                 changed = true;
-                if (proof) {
-                    // m must take a single value o_cannot_be. we know m must take
-                    // at least one value...
-                    set<ProofLineNumber> conflicts;
-                    // and we know it cannot take any of the other values...
-                    for (auto & v : *m.original_values)
-                        if (v != o_cannot_be)
-                            conflicts.insert(proof->line_for_var_not_equal_value(my_name, v));
-
-                    // now o cannot take the value o_cannot_be
-                    proof->proof_stream() << "* not_equals" << endl;
-
-                    proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(my_name);
-                    for (auto & c : conflicts)
-                        proof->proof_stream() << " " << c << " +";
-                    proof->proof_stream() << " " << _constraint_number.find(o_cannot_be)->second << " +";
-                    proof->proof_stream() << " " << (conflicts.size() + 1) << " d 0" << endl;
-                    proof->next_proof_line();
-                    proof->proved_var_not_equal_value(other_name, o_cannot_be, proof->last_proof_line());
-                }
             }
         }
     };
@@ -67,20 +47,14 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<V
 
     if (changed && (f->values.empty() || s->values.empty())) {
         if (proof) {
-            auto half_prove_wipeout = [&] (
-                    Variable & empty, VariableID empty_name, Variable &, VariableID) {
+            if (f->values.empty()) {
                 proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
-                proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(empty_name);
-                for (auto & v : *empty.original_values)
-                    proof->proof_stream() << " " << proof->line_for_var_not_equal_value(empty_name, v) << " +";
-                proof->proof_stream() << " " << (empty.original_values->size() + 1) << " d 0" << endl;
-                proof->next_proof_line();
-            };
-
-            if (f->values.empty())
-                half_prove_wipeout(*f, _first, *s, _second);
-            else
-                half_prove_wipeout(*s, _second, *f, _first);
+                proof->domain_wipeout(_first, *f);
+            }
+            else {
+                proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
+                proof->domain_wipeout(_second, *s);
+            }
         }
         return false;
     }
@@ -109,8 +83,8 @@ auto NotEqualConstraint::associated_variables() const -> set<VariableID>
     return result;
 }
 
-
 auto NotEqualConstraint::priority() const -> int
 {
     return 1;
 }
+

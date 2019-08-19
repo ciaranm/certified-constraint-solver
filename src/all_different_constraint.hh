@@ -5,6 +5,7 @@
 
 #include "constraint.hh"
 
+#include <list>
 #include <map>
 #include <set>
 #include <string>
@@ -23,6 +24,15 @@ class AllDifferentConstraint : public Constraint
         std::vector<VariableID> _vars;
         std::map<VariableValue, int> _constraint_numbers;
         AllDifferentStrength _strength;
+
+        auto _prove_deletion_using_hall_set(
+                Model &,
+                Proof &,
+                const std::map<VariableID, std::list<VariableValue> > & edges_out_from_variable,
+                const std::map<VariableValue, std::list<VariableID> > & edges_out_from_value,
+                const VariableID delete_variable,
+                const VariableValue delete_value
+                ) const -> void;
 
         auto _prove_matching_is_too_small(
                 Model &,

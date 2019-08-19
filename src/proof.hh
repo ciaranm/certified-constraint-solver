@@ -52,15 +52,9 @@ class Proof
         [[ nodiscard ]] auto last_model_line() const -> ProofLineNumber;
         auto next_model_line() -> void;
 
-        auto push_context() -> void;
-        auto pop_context() -> void;
-
         auto proof_stream() -> std::ostream &;
         [[ nodiscard ]] auto last_proof_line() const -> ProofLineNumber;
         auto next_proof_line() -> void;
-
-        auto line_for_var_not_equal_value(VariableID, VariableValue) -> ProofLineNumber;
-        auto proved_var_not_equal_value(VariableID, VariableValue, ProofLineNumber) -> void;
 
         auto line_for_var_takes_at_least_one_value(VariableID) -> ProofLineNumber;
         auto line_for_var_takes_at_most_one_value(VariableID) -> ProofLineNumber;
@@ -68,9 +62,10 @@ class Proof
         auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> ProofLineNumber;
         auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> ProofLineNumber;
 
-        auto set_active_stack(const std::list<std::pair<VariableID, VariableValue> > *) -> void;
-        auto assert_what_we_just_did(const std::string &) -> void;
-        auto assert_we_proved_var_not_equal_value(VariableID, VariableValue, const std::string &) -> void;
+        auto domain_wipeout(VariableID, const Variable &) -> void;
+
+        auto enstackinate_guess(VariableID, const std::string &, VariableValue) -> void;
+        auto incorrect_guess() -> void;
 
         auto asserty() const -> bool;
 };

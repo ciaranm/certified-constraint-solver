@@ -33,7 +33,7 @@ auto TableConstraint::associate_with_variable(VariableID n) -> void
     _vars.push_back(n);
 }
 
-auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<VariableID> &) const -> bool
+auto TableConstraint::propagate(Model & model, optional<Proof> &, set<VariableID> &) const -> bool
 {
     if (unsigned(_table->arity) != _vars.size())
         throw ModelError{ "Wrong number of variables in table constraint" };
@@ -51,42 +51,6 @@ auto TableConstraint::propagate(Model & model, optional<Proof> & proof, set<Vari
 
         if (ok)
             return true;
-    }
-
-    if (proof) {
-        // show that every control tuple has to be selected
-        vector<ProofLineNumber> controls;
-        for (unsigned t = 0 ; t < _table->allowed_tuples.size() ; ++t) {
-            // check this isn't an infeasible tuple not listed in the model
-            auto c =  _constraint_for_tuple.find(t);
-            if (c == _constraint_for_tuple.end())
-                continue;
-
-            proof->proof_stream() << "* table constraint infeasible tuple" << endl;
-            proof->proof_stream() << "p " << c->second;
-            for (int i = 0 ; i < _table->arity ; ++i) {
-                if (! model.get_variable(_vars[i])->values.count(_table->allowed_tuples[t][i])) {
-                    // this can contribute at most zero
-                    proof->proof_stream() << " " << proof->line_for_var_not_equal_value(_vars[i], _table->allowed_tuples[t][i]) << " +";
-                } else {
-                    // this can contribute at most one
-                    proof->proof_stream() << " " << proof->line_for_var_val_is_at_most_one(_vars[i], _table->allowed_tuples[t][i]) << " +";
-                }
-            }
-            // and all of this sums up to too little
-            proof->proof_stream() << " " << _table->arity << " d 0" << endl;
-            proof->next_proof_line();
-            controls.push_back(proof->last_proof_line());
-        }
-
-        // we can't select every control tuple
-        proof->proof_stream() << "* table constraint is infeasible overall" << endl;
-        proof->proof_stream() << "p " << _must_have_one_constraint;
-        for (auto & c : controls) {
-            proof->proof_stream() << " " << c << " +";
-        }
-        proof->proof_stream() << " " << controls.size() << " d 0" << endl;
-        proof->next_proof_line();
     }
 
     return false;

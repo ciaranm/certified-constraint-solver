@@ -1,6 +1,7 @@
 /* vim: set sw=4 sts=4 et foldmethod=syntax : */
 
 #include "proof.hh"
+#include "variable.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -8,6 +9,7 @@
 #include <list>
 #include <map>
 #include <sstream>
+#include <tuple>
 #include <utility>
 
 using std::copy;
@@ -22,6 +24,7 @@ using std::pair;
 using std::string;
 using std::stringstream;
 using std::to_string;
+using std::tuple;
 
 ProofError::ProofError(const string & m) noexcept :
     _message("Proof error: " + m)
@@ -46,10 +49,9 @@ struct Proof::Imp
     int anonymous_variables = 66666;
 
     map<VariableID, ProofLineNumber> variable_takes_at_least_one_value, variable_takes_at_most_one_value;
-    list<map<pair<VariableID, VariableValue>, ProofLineNumber> > var_not_equal_value;
     map<pair<VariableID, VariableValue>, UnderlyingVariableID> vv_mapping;
 
-    const list<pair<VariableID, VariableValue> > * active_stack;
+    list<tuple<VariableID, string, VariableValue> > stack;
 
     bool asserty = false;
 };
@@ -154,25 +156,6 @@ auto Proof::next_proof_line() -> void
     _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line} + 1 };
 }
 
-auto Proof::line_for_var_not_equal_value(VariableID v, VariableValue n) -> ProofLineNumber
-{
-    for (auto r = _imp->var_not_equal_value.rbegin() ; r != _imp->var_not_equal_value.rend() ; ++r) {
-        auto w = r->find(pair{ v, n });
-        if (w != r->end())
-            return w->second;
-    }
-
-    throw ProofError{ "Don't have a stored reason" };
-}
-
-auto Proof::proved_var_not_equal_value(VariableID v, VariableValue n, ProofLineNumber l) -> void
-{
-    _imp->var_not_equal_value.back().emplace(pair{ v, n }, l);
-    if (_imp->asserty) {
-        assert_we_proved_var_not_equal_value(v, n, "storing conflict line");
-    }
-}
-
 auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> ProofLineNumber
 {
     return _imp->variable_takes_at_least_one_value.find(n)->second;
@@ -181,16 +164,6 @@ auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> ProofLineNumb
 auto Proof::line_for_var_takes_at_most_one_value(VariableID n) -> ProofLineNumber
 {
     return _imp->variable_takes_at_most_one_value.find(n)->second;
-}
-
-auto Proof::push_context() -> void
-{
-    _imp->var_not_equal_value.emplace_back();
-}
-
-auto Proof::pop_context() -> void
-{
-    _imp->var_not_equal_value.pop_back();
 }
 
 auto Proof::line_for_var_val_is_at_most_one(VariableID n, VariableValue v) const -> ProofLineNumber
@@ -203,61 +176,46 @@ auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) con
     return ProofLineNumber{ int{ _imp->variable_axioms_start } + 2 * int{ _imp->vv_mapping.find(pair{ n, v })->second } - 1 };
 }
 
-auto Proof::assert_what_we_just_did(const string & why) -> void
-{
-    proof_stream() << "* verifying that the conflict generated is what we expect, " << why << endl;
-    auto recover_line = last_proof_line();
-    proof_stream() << "p " << last_proof_line();
-    for (auto & [ var, val ] : *_imp->active_stack)
-        proof_stream() << " " << line_for_var_val_is_at_most_one(var, val) << " 1000 * +";
-    proof_stream() << " 0" << endl;
-    next_proof_line();
-    proof_stream() << "p " << last_proof_line() << " 1001 d 0" << endl;
-    next_proof_line();
-
-    proof_stream() << "e " << last_proof_line() << " opb";
-    for (auto & [ var, val ] : *_imp->active_stack)
-        proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
-    proof_stream() << " >= 1 ;" << endl;
-
-    proof_stream() << "p " << recover_line << " 0 + 0" << endl;
-    next_proof_line();
-
-    proof_stream() << "* end of verification" << endl;
-}
-
-auto Proof::assert_we_proved_var_not_equal_value(VariableID var, VariableValue val,
-        const string & why) -> void
-{
-    proof_stream() << "* verifying that we just proved var " << int{ var } << " not equal value " << int{ val } << ", x" << variable_value_mapping(var, val) << ", " << why << endl;
-    auto recover_line = last_proof_line();
-    proof_stream() << "p " << last_proof_line();
-    for (auto & [ var, val ] : *_imp->active_stack)
-        proof_stream() << " " << line_for_var_val_is_at_most_one(var, val) << " 1000 * +";
-    proof_stream() << " 0" << endl;
-    next_proof_line();
-    proof_stream() << "p " << last_proof_line() << " 1001 d 0" << endl;
-    next_proof_line();
-
-    proof_stream() << "e " << last_proof_line() << " opb";
-    for (auto & [ var, val ] : *_imp->active_stack)
-        proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
-    proof_stream() << " 1 ~x" << variable_value_mapping(var, val);
-    proof_stream() << " >= 1 ;" << endl;
-
-    proof_stream() << "p " << recover_line << " 0 + 0" << endl;
-    next_proof_line();
-
-    proof_stream() << "* end of verification" << endl;
-}
-
-auto Proof::set_active_stack(const list<pair<VariableID, VariableValue> > * s) -> void
-{
-    _imp->active_stack = s;
-}
-
 auto Proof::asserty() const -> bool
 {
     return _imp->asserty;
+}
+
+auto Proof::domain_wipeout(VariableID empty_var_name, const Variable & empty_var) -> void
+{
+    proof_stream() << "u opb";
+    for (auto & [ var, _, val ] : _imp->stack)
+        proof_stream() << " -1 x" << variable_value_mapping(var, val);
+    for (auto & v : *empty_var.original_values)
+        proof_stream() << " -1 x" << variable_value_mapping(empty_var_name, v);
+    proof_stream() << " >= -" << (_imp->stack.size() + empty_var.original_values->size() - 1) << " ;" << endl;
+    next_proof_line();
+}
+
+auto Proof::enstackinate_guess(VariableID var, const string & name, VariableValue val) -> void
+{
+    _imp->stack.push_back(tuple{ var, name, val });
+    proof_stream() << "* guessing";
+    for (auto & [ s, n, t ] : _imp->stack)
+        proof_stream() << " " << n << "=" << int{ t } << " (" << "x" << variable_value_mapping(s, t) << ")";
+    proof_stream() << endl;
+}
+
+auto Proof::incorrect_guess() -> void
+{
+    proof_stream() << "* incorrect guess";
+    for (auto & [ s, n, t ] : _imp->stack)
+        proof_stream() << " " << n << "=" << int{ t } << " (" << "x" << variable_value_mapping(s, t) << ")";
+    proof_stream() << endl;
+
+    auto [ wrong_var, _, wrong_val ] = _imp->stack.back();
+    _imp->stack.pop_back();
+
+    proof_stream() << "u opb";
+    for (auto & [ var, _, val ] : _imp->stack)
+        proof_stream() << " -1 x" << variable_value_mapping(var, val);
+    proof_stream() << " -1 x" << variable_value_mapping(wrong_var, wrong_val);
+    proof_stream() << " >= -" << _imp->stack.size() << " ;" << endl;
+    next_proof_line();
 }
 

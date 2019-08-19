@@ -21,33 +21,11 @@ auto EqualConstantConstraint::propagate(Model & model, optional<Proof> & proof, 
 {
     auto f = model.get_variable(_first);
 
-    if (proof) {
-        if (f->values.size() > 1 || (f->values.size() == 1 && *f->values.begin() != _second))
-            proof->proof_stream() << "* equals " << model.original_name(_first) << " = " << int{ _second } << endl;
-
-        for (auto & v : f->values)
-            if (v != _second) {
-                proof->proof_stream() << "p " << proof->line_for_var_takes_at_most_one_value(_first) << " "
-                    << _constraint_number << " +";
-                for (auto & w : *f->original_values)
-                    if (w != v && w != _second)
-                        proof->proof_stream() << " " << proof->line_for_var_val_is_at_least_zero(_first, w) << " +";
-                proof->proof_stream() << " 0" << endl;
-                proof->next_proof_line();
-                proof->proved_var_not_equal_value(_first, v, proof->last_proof_line());
-;
-            }
-    }
-
     // either the variable doesn't contain the value at all...
     if (! f->values.count(_second)) {
         if (proof) {
             proof->proof_stream() << "* got domain wipeout on equals" << endl;
-            proof->proof_stream() << "p " << proof->line_for_var_takes_at_least_one_value(_first);
-            for (auto & v : *f->original_values)
-                proof->proof_stream() << " " << proof->line_for_var_not_equal_value(_first, v) << " +";
-            proof->proof_stream() << " " << (f->original_values->size() + 1) << " d 0" << endl;
-            proof->next_proof_line();
+            proof->domain_wipeout(_first, *f);
         }
         f->values.clear();
         return false;
