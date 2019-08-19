@@ -10,18 +10,18 @@ if ! type refpy && [[ -x ${HOME}/.local/bin/refpy ]] ; then
     export PATH="${HOME}/.local/bin:$PATH"
 fi
 
-if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsat.model ) ; then
-    echo "no search unsat test failed" 1>&2
-    exit 1
-fi
-
 if ! type roundingsat ; then
-    echo "couldn't find roundingsat executable" 1>&2
-    exit 1
+    echo "couldn't find roundingsat executable, skipping tests" 1>&2
+    exit 0
 fi
 
 if ! type refpy ; then
-    echo "couldn't find refpy executable" 1>&2
+    echo "couldn't find refpy executable, skipping tests" 1>&2
+    exit 1
+fi
+
+if ! grep '^status = false$' <(./certified_constraint_solver models/nosearchunsat.model ) ; then
+    echo "no search unsat test failed" 1>&2
     exit 1
 fi
 
