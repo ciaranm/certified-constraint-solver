@@ -24,20 +24,13 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
     ++result.nodes;
     auto model = start_model;
 
-    if (proof) {
+    if (proof)
         proof->proof_stream() << "* propagation at depth " << depth << endl;
-    }
 
     if (! model.propagate(proof)) {
-        if (proof) {
+        if (proof)
             proof->proof_stream() << "* propagation detected inconsistency at depth " << depth << endl;
 
-            // proof->proof_stream() << "u opb";
-            // for (auto & [ var, val ] : stack)
-            //     proof->proof_stream() << " -1 x" << proof->variable_value_mapping(var, val);
-            // proof->proof_stream() << " >= " << -(int(stack.size()) - 1) << " ;" << endl;
-            // proof->next_proof_line();
-        }
         return;
     }
 
