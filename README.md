@@ -16,6 +16,11 @@ after your initial 'git clone'.
 To build, type 'make'. You will need a C++17 compiler (we test with GCC 8.3, and Clang 7.0.1 on
 Linux, and Xcode 10.2 on Mac OS X) and Boost (we use 1.65.1 or later, built with threads enabled).
 
+The tests for this project have two dependencies, which are also required for proof verification:
+
+* refpy from https://github.com/StephanGocht/refpy/ .
+* roundingsat from https://github.com/elffersj/roundingsat/ .
+
 Modelling
 ---------
 
