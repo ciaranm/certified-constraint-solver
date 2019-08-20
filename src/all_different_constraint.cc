@@ -266,16 +266,8 @@ auto AllDifferentConstraint::_prove_deletion_using_hall_set(
         proof.proof_stream() << " " << proof.line_for_var_takes_at_least_one_value(h) << " +";
     for (auto & w : hall_right)
         proof.proof_stream() << " " << _constraint_numbers.find(w)->second << " +";
-
-    // we might also be showing that the deletion variable
-    // cannot take the other values inside the hall set either,
-    // which is true but irrelevant for this particular
-    // deduction
-    for (auto & r : hall_right)
-        if (r != delete_value && model.get_variable(delete_variable)->original_values->count(r))
-            proof.proof_stream() << " " << proof.line_for_var_val_is_at_least_zero(delete_variable, r) << " +";
-
     proof.proof_stream() << " 0" << endl;
+
     proof.next_proof_line();
 }
 
