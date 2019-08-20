@@ -97,6 +97,15 @@ elif ! refpy models/branchonce.opb models/branchonce.log ; then
 fi
 rm -f models/branchonce.opb models/branchonce.log
 
+if ! grep '^status = false$' <(./certified_constraint_solver models/minimal.model --prove ) ; then
+    echo "minimal unsat test failed" 1>&2
+    exit 1
+elif ! refpy models/minimal.opb models/minimal.log ; then
+    echo "minimal refpy verification failed" 1>&2
+    exit 1
+fi
+rm -f models/minimal.opb models/minimal.log
+
 if ! grep '^status = false$' <(./certified_constraint_solver models/branchtwice.model --prove ) ; then
     echo "branch twice unsat test failed" 1>&2
     exit 1

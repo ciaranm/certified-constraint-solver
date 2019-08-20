@@ -1,0 +1,10 @@
+intvar a { 2 4 }
+
+intvar b { 1 2 4 }
+intvar c { 1 3 }
+intvar d { 1 3 }
+intvar e { 1 2 3 4 }
+
+notequal a b
+notequal a e
+alldifferent 4 b c d e
