@@ -215,14 +215,16 @@ auto AllDifferentConstraint::_prove_matching_is_too_small(
     proof.next_proof_line();
 }
 
-auto AllDifferentConstraint::_prove_deletion_using_hall_set(
+auto _prove_deletion_using_sccs(
+        const std::map<VariableValue, int> & _constraint_numbers,
         Model & model,
         Proof & proof,
         const map<VariableID, list<VariableValue> > & edges_out_from_variable,
         const map<VariableValue, list<VariableID> > & edges_out_from_value,
         const VariableID delete_variable,
-        const VariableValue delete_value
-        ) const -> void
+        const VariableValue delete_value,
+        const map<Vertex, int> & components
+        ) -> void
 {
     // we know a hall set exists, but we have to find it. starting
     // from but not including the end of the edge we're deleting,
@@ -231,6 +233,7 @@ auto AllDifferentConstraint::_prove_deletion_using_hall_set(
     set<VariableID> hall_left;
     set<VariableValue> hall_right;
     to_explore.insert(delete_value);
+    int care_about_scc = components.find(delete_value)->second;
     while (! to_explore.empty()) {
         Vertex n = *to_explore.begin();
         to_explore.erase(n);
@@ -242,7 +245,7 @@ auto AllDifferentConstraint::_prove_deletion_using_hall_set(
                 auto e = edges_out_from_variable.find(x);
                 if (e != edges_out_from_variable.end())
                     for (const auto & t : e->second) {
-                        if (! explored.count(t))
+                        if (care_about_scc == components.find(t)->second && ! explored.count(t))
                             to_explore.insert(t);
                     }
             }
@@ -251,15 +254,21 @@ auto AllDifferentConstraint::_prove_deletion_using_hall_set(
                 auto e = edges_out_from_value.find(x);
                 if (e != edges_out_from_value.end())
                     for (const auto & t : e->second) {
-                        if (! explored.count(t))
+                        if (care_about_scc == components.find(t)->second && ! explored.count(t))
                             to_explore.insert(t);
                     }
             }
         }, n);
     }
 
-    proof.proof_stream() << "* all different, found hall set, "
-        << model.original_name(delete_variable) << " not equal " << int{ delete_value } << endl;
+    proof.proof_stream() << "* all different, found hall set {";
+    for (auto & h : hall_left)
+        proof.proof_stream() << " " << model.original_name(h);
+
+    proof.proof_stream() << " } having values {";
+    for (auto & w : hall_right)
+        proof.proof_stream() << " " << int{ w };
+    proof.proof_stream() << " } and so " << model.original_name(delete_variable) << " != " << int{ delete_value } << endl;
 
     proof.proof_stream() << "p 0";
     for (auto & h : hall_left)
@@ -412,6 +421,9 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, s
         if (components.find(f)->second == components.find(t)->second)
             used_edges.emplace(f, t);
 
+    // avoid outputting duplicate proof lines
+    set<int> sccs_already_done;
+
     // anything left can be deleted
     for (auto & [ delete_var_name, delete_value ] : edges) {
         if (used_edges.count(pair{ delete_var_name, delete_value }))
@@ -419,9 +431,14 @@ auto AllDifferentConstraint::propagate(Model & model, optional<Proof> & proof, s
 
         auto delete_var = model.get_variable(delete_var_name);
         if (delete_var->values.count(delete_value)) {
-            if (proof)
-                _prove_deletion_using_hall_set(model, *proof, edges_out_from_variable,
-                        edges_out_from_value, delete_var_name, delete_value);
+            if (proof) {
+                if (sccs_already_done.emplace(components.find(delete_value)->second).second)
+                    _prove_deletion_using_sccs(_constraint_numbers, model, *proof, edges_out_from_variable,
+                            edges_out_from_value, delete_var_name, delete_value, components);
+                else
+                    proof->proof_stream() << "* can reuse hall set to show " << model.original_name(delete_var_name)
+                        << " != " << int{ delete_value } << endl;
+            }
 
             delete_var->values.erase(delete_value);
             changed_vars.emplace(delete_var_name);
