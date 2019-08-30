@@ -46,16 +46,8 @@ auto NotEqualConstraint::propagate(Model & model, optional<Proof> & proof, set<V
     half_propagate(*s, _second, *f, _first);
 
     if (changed && (f->values.empty() || s->values.empty())) {
-        if (proof) {
-            if (f->values.empty()) {
-                proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
-                proof->domain_wipeout(_first, *f);
-            }
-            else {
-                proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
-                proof->domain_wipeout(_second, *s);
-            }
-        }
+        if (proof)
+            proof->proof_stream() << "* got domain wipeout on not_equals" << endl;
         return false;
     }
 

@@ -23,10 +23,8 @@ auto EqualConstantConstraint::propagate(Model & model, optional<Proof> & proof, 
 
     // either the variable doesn't contain the value at all...
     if (! f->values.count(_second)) {
-        if (proof) {
+        if (proof)
             proof->proof_stream() << "* got domain wipeout on equals" << endl;
-            proof->domain_wipeout(_first, *f);
-        }
         f->values.clear();
         return false;
     }

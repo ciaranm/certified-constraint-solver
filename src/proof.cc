@@ -181,17 +181,6 @@ auto Proof::asserty() const -> bool
     return _imp->asserty;
 }
 
-auto Proof::domain_wipeout(VariableID empty_var_name, const Variable & empty_var) -> void
-{
-    proof_stream() << "u opb";
-    for (auto & [ var, _, val ] : _imp->stack)
-        proof_stream() << " -1 x" << variable_value_mapping(var, val);
-    for (auto & v : *empty_var.original_values)
-        proof_stream() << " -1 x" << variable_value_mapping(empty_var_name, v);
-    proof_stream() << " >= -" << (_imp->stack.size() + empty_var.original_values->size() - 1) << " ;" << endl;
-    next_proof_line();
-}
-
 auto Proof::enstackinate_guess(VariableID var, const string & name, VariableValue val) -> void
 {
     _imp->stack.push_back(tuple{ var, name, val });

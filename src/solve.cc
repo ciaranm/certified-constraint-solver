@@ -56,10 +56,8 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
                 proof->incorrect_guess();
         }
 
-        if (proof) {
-            proof->proof_stream() << "* domain wipeout at depth " << depth << endl;
-            proof->domain_wipeout(branch_variable_name, *branch_variable);
-        }
+        if (proof)
+            proof->proof_stream() << "* ran out of branch values at depth " << depth << endl;
     }
     else
         model.save_result(result);

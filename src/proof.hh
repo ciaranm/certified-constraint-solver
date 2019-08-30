@@ -62,8 +62,6 @@ class Proof
         auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> ProofLineNumber;
         auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> ProofLineNumber;
 
-        auto domain_wipeout(VariableID, const Variable &) -> void;
-
         auto enstackinate_guess(VariableID, const std::string &, VariableValue) -> void;
         auto incorrect_guess() -> void;
 
