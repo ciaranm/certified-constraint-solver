@@ -148,7 +148,7 @@ auto build_matching(
 }
 
 auto AllDifferentConstraint::_prove_matching_is_too_small(
-        Model &,
+        Model & model,
         Proof & proof,
         const set<pair<VariableID, VariableValue> > & edges,
         const set<VariableID> & lhs,
@@ -159,6 +159,11 @@ auto AllDifferentConstraint::_prove_matching_is_too_small(
     map<VariableValue, VariableID> inverse_matching;
     for (auto & [ l, r ] : matching)
         inverse_matching.emplace(r, l);
+
+    proof.proof_stream() << "* matching is";
+    for (auto & [ l, r ] : matching)
+        proof.proof_stream() << " (" << model.original_name(l) << ", " << int{ r } << ")";
+    proof.proof_stream() << endl;
 
     set<VariableID> hall_variables;
     set<VariableValue> hall_values;
