@@ -24,8 +24,9 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
     ++result.nodes;
     auto model = start_model;
 
-    if (proof)
+    if (proof) {
         proof->proof_stream() << "* propagation at depth " << depth << endl;
+    }
 
     if (! model.propagate(proof)) {
         if (proof)
@@ -44,16 +45,24 @@ auto search(int depth, Result & result, const Model & start_model, optional<Proo
         for (auto & v : possible_values) {
             branch_variable->values = {{ v }};
 
-            if (proof)
+            if (proof) {
+                if (proof->levels()) {
+                    proof->proof_stream() << "lvlset " << (depth + 2) << endl;
+                    proof->proof_stream() << "lvlclear " << (depth + 2) << endl;
+                }
                 proof->enstackinate_guess(branch_variable_name, model.original_name(branch_variable_name), v);
+            }
 
             search(depth + 1, result, model, proof);
 
             if (! result.solution.empty())
                 return;
 
-            if (proof)
+            if (proof) {
+                if (proof->levels())
+                    proof->proof_stream() << "lvlset " << (depth + 1) << endl;
                 proof->incorrect_guess();
+            }
         }
 
         if (proof)

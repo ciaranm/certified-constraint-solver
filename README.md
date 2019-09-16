@@ -21,6 +21,11 @@ The tests for this project have two dependencies, which are also required for pr
 * refpy from https://github.com/StephanGocht/refpy/ .
 * roundingsat from https://github.com/elffersj/roundingsat/ .
 
+Alternatively, you can use the following to verify proofs (in which case you can use the
+``--levels`` command line option to generate proofs that require less time and memory to verify):
+
+* prooflogging from https://github.com/elffersj/prooflogging .
+
 Modelling
 ---------
 

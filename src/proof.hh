@@ -30,7 +30,7 @@ class Proof
         std::unique_ptr<Imp> _imp;
 
     public:
-        Proof(const std::string & opb_file, const std::string & log_file, bool asserty);
+        Proof(const std::string & opb_file, const std::string & log_file, bool asserty, bool levels);
         Proof(Proof &&);
         ~Proof();
         auto operator= (Proof &&) -> Proof &;
@@ -66,6 +66,7 @@ class Proof
         auto incorrect_guess() -> void;
 
         auto asserty() const -> bool;
+        auto levels() const -> bool;
 };
 
 #endif

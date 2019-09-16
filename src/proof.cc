@@ -54,12 +54,14 @@ struct Proof::Imp
     list<tuple<VariableID, string, VariableValue> > stack;
 
     bool asserty = false;
+    bool levels = false;
 };
 
-Proof::Proof(const string & opb, const string & log, bool asserty)
+Proof::Proof(const string & opb, const string & log, bool asserty, bool levels)
 {
     _imp = make_unique<Proof::Imp>();
     _imp->asserty = asserty;
+    _imp->levels = levels;
 
     _imp->opb_file.open(opb);
     if (! _imp->opb_file)
@@ -179,6 +181,11 @@ auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) con
 auto Proof::asserty() const -> bool
 {
     return _imp->asserty;
+}
+
+auto Proof::levels() const -> bool
+{
+    return _imp->levels;
 }
 
 auto Proof::enstackinate_guess(VariableID var, const string & name, VariableValue val) -> void

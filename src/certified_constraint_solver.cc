@@ -70,6 +70,7 @@ auto main(int argc, char * argv[]) -> int
             ("write-opb-to",    po::value<string>(),         "Specify the proof model file (default: input file with .obp extension)")
             ("write-ref-to",    po::value<string>(),         "Specify the proof log file (default: input file with .log extension)")
             ("asserty",                                      "Generate lots of extra assertions in the proof")
+            ("levels",                                       "Generate lvlset and lvlclear commands in the proof")
             ;
 
         po::positional_options_description positional_options;
@@ -141,11 +142,12 @@ auto main(int argc, char * argv[]) -> int
             }
 
             bool asserty = options_vars.count("asserty");
+            bool levels = options_vars.count("levels");
 
 #if defined(STD_FS_IS_BOOST)
-            proof = make_optional<Proof>(opb_file.string(), log_file.string(), asserty);
+            proof = make_optional<Proof>(opb_file.string(), log_file.string(), asserty, levels);
 #else
-            proof = make_optional<Proof>(opb_file, log_file, asserty);
+            proof = make_optional<Proof>(opb_file, log_file, asserty, levels);
 #endif
         }
 
