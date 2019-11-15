@@ -40,7 +40,6 @@ class Proof
 
         auto write_header() -> void;
         auto load_problem_constraints() -> void;
-        auto load_variable_axioms() -> void;
 
         auto create_anonymous_extra_variable() -> UnderlyingVariableID;
         auto create_variable_value_mapping(VariableID, VariableValue) -> UnderlyingVariableID;
@@ -58,9 +57,6 @@ class Proof
 
         auto line_for_var_takes_at_least_one_value(VariableID) -> ProofLineNumber;
         auto line_for_var_takes_at_most_one_value(VariableID) -> ProofLineNumber;
-
-        auto line_for_var_val_is_at_most_one(VariableID, VariableValue) const -> ProofLineNumber;
-        auto line_for_var_val_is_at_least_zero(VariableID, VariableValue) const -> ProofLineNumber;
 
         auto enstackinate_guess(VariableID, const std::string &, VariableValue) -> void;
         auto incorrect_guess() -> void;

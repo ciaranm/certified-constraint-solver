@@ -119,7 +119,6 @@ auto Model::start_proof(Proof & proof) const -> void
 
     proof.write_header();
     proof.load_problem_constraints();
-    proof.load_variable_axioms();
 }
 
 auto Model::add_constraint(shared_ptr<Constraint> c) -> void

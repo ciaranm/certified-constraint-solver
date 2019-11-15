@@ -92,13 +92,6 @@ auto Proof::load_problem_constraints() -> void
     _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line} + int{ _imp->model_constraints_line } };
 }
 
-auto Proof::load_variable_axioms() -> void
-{
-    proof_stream() << "l " << _imp->number_of_variables << " 0" << endl;
-    _imp->variable_axioms_start = _imp->proof_line;
-    _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line } + (int{ _imp->number_of_variables } * 2) };
-}
-
 auto Proof::create_variable_value_mapping(VariableID n, VariableValue v) -> UnderlyingVariableID
 {
     _imp->number_of_variables = UnderlyingVariableID{ int{ _imp->number_of_variables } + 1 };
@@ -166,16 +159,6 @@ auto Proof::line_for_var_takes_at_least_one_value(VariableID n) -> ProofLineNumb
 auto Proof::line_for_var_takes_at_most_one_value(VariableID n) -> ProofLineNumber
 {
     return _imp->variable_takes_at_most_one_value.find(n)->second;
-}
-
-auto Proof::line_for_var_val_is_at_most_one(VariableID n, VariableValue v) const -> ProofLineNumber
-{
-    return ProofLineNumber{ int{ _imp->variable_axioms_start } + 2 * int{ _imp->vv_mapping.find(pair{ n, v })->second } };
-}
-
-auto Proof::line_for_var_val_is_at_least_zero(VariableID n, VariableValue v) const -> ProofLineNumber
-{
-    return ProofLineNumber{ int{ _imp->variable_axioms_start } + 2 * int{ _imp->vv_mapping.find(pair{ n, v })->second } - 1 };
 }
 
 auto Proof::asserty() const -> bool
