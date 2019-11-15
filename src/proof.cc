@@ -80,7 +80,7 @@ auto Proof::operator= (Proof &&) -> Proof & = default;
 
 auto Proof::write_header() -> void
 {
-    proof_stream() << "refutation using f l p u c 0" << endl;
+    proof_stream() << "pseudo Boolean proof version 1.0" << endl;
 
     _imp->opb_file << "* #variable= " << _imp->number_of_variables << " #constraint= " << _imp->model_constraints_line << endl;
      copy(istreambuf_iterator<char>{ _imp->opb_body_file }, istreambuf_iterator<char>{}, ostreambuf_iterator<char>{ _imp->opb_file });
@@ -190,7 +190,7 @@ auto Proof::incorrect_guess() -> void
     auto [ wrong_var, _, wrong_val ] = _imp->stack.back();
     _imp->stack.pop_back();
 
-    proof_stream() << "u opb";
+    proof_stream() << "u ";
     for (auto & [ var, _, val ] : _imp->stack)
         proof_stream() << " -1 x" << variable_value_mapping(var, val);
     proof_stream() << " -1 x" << variable_value_mapping(wrong_var, wrong_val);

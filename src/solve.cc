@@ -83,7 +83,7 @@ auto solve(const Model & model, optional<Proof> & proof) -> Result
     search(0, result, model, proof);
 
     if (proof && result.solution.empty()) {
-        proof->proof_stream() << "u opb >= 1 ;" << endl;
+        proof->proof_stream() << "u >= 1 ;" << endl;
         proof->next_proof_line();
         proof->proof_stream() << "c " << proof->last_proof_line() << " 0" << endl;
     }
