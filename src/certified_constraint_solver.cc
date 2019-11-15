@@ -71,6 +71,7 @@ auto main(int argc, char * argv[]) -> int
             ("write-ref-to",    po::value<string>(),         "Specify the proof log file (default: input file with .log extension)")
             ("asserty",                                      "Generate lots of extra assertions in the proof")
             ("levels",                                       "Generate lvlset and lvlclear commands in the proof")
+            ("numbered-variables",                           "Generate variables named x1, ..., xN rather than xVarVal")
             ;
 
         po::positional_options_description positional_options;
@@ -143,11 +144,12 @@ auto main(int argc, char * argv[]) -> int
 
             bool asserty = options_vars.count("asserty");
             bool levels = options_vars.count("levels");
+            bool numbered_variables = options_vars.count("numbered-variables");
 
 #if defined(STD_FS_IS_BOOST)
-            proof = make_optional<Proof>(opb_file.string(), log_file.string(), asserty, levels);
+            proof = make_optional<Proof>(opb_file.string(), log_file.string(), asserty, levels, numbered_variables);
 #else
-            proof = make_optional<Proof>(opb_file, log_file, asserty, levels);
+            proof = make_optional<Proof>(opb_file, log_file, asserty, levels, numbered_variables);
 #endif
         }
 

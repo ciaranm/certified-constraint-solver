@@ -46,7 +46,7 @@ auto Variable::start_proof(const Model & model, VariableID name, Proof & proof) 
 
     // record the variables in the opb file
     for (auto & v : values) {
-        UnderlyingVariableID idx = proof.create_variable_value_mapping(name, v);
+        UnderlyingVariableID idx = proof.create_variable_value_mapping(model.original_name(name), name, v);
         indices.push_back(idx);
         proof.model_stream() << " (" << int{ v } << ", x" << idx << ")";
     }

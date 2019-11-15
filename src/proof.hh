@@ -30,7 +30,7 @@ class Proof
         std::unique_ptr<Imp> _imp;
 
     public:
-        Proof(const std::string & opb_file, const std::string & log_file, bool asserty, bool levels);
+        Proof(const std::string & opb_file, const std::string & log_file, bool asserty, bool levels, bool numbered_variables);
         Proof(Proof &&);
         ~Proof();
         auto operator= (Proof &&) -> Proof &;
@@ -42,7 +42,7 @@ class Proof
         auto load_problem_constraints() -> void;
 
         auto create_anonymous_extra_variable() -> UnderlyingVariableID;
-        auto create_variable_value_mapping(VariableID, VariableValue) -> UnderlyingVariableID;
+        auto create_variable_value_mapping(const std::string &, VariableID, VariableValue) -> UnderlyingVariableID;
         auto variable_value_mapping(VariableID, VariableValue) const -> UnderlyingVariableID;
         auto wrote_variable_takes_at_least_one_value(VariableID, ProofLineNumber) -> void;
         auto wrote_variable_takes_at_most_one_value(VariableID, ProofLineNumber) -> void;

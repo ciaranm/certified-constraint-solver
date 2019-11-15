@@ -43,7 +43,7 @@ struct Proof::Imp
     stringstream opb_body_file;
 
     ProofLineNumber model_constraints_line{ 0 };
-    UnderlyingVariableID number_of_variables{ 0 };
+    int number_of_variables{ 0 };
     ProofLineNumber proof_line{ 0 };
     ProofLineNumber variable_axioms_start{ 0 };
     int anonymous_variables = 66666;
@@ -55,13 +55,15 @@ struct Proof::Imp
 
     bool asserty = false;
     bool levels = false;
+    bool numbered_variables = false;
 };
 
-Proof::Proof(const string & opb, const string & log, bool asserty, bool levels)
+Proof::Proof(const string & opb, const string & log, bool asserty, bool levels, bool numbered_variables)
 {
     _imp = make_unique<Proof::Imp>();
     _imp->asserty = asserty;
     _imp->levels = levels;
+    _imp->numbered_variables = numbered_variables;
 
     _imp->opb_file.open(opb);
     if (! _imp->opb_file)
@@ -92,18 +94,20 @@ auto Proof::load_problem_constraints() -> void
     _imp->proof_line = ProofLineNumber{ int{ _imp->proof_line} + int{ _imp->model_constraints_line } };
 }
 
-auto Proof::create_variable_value_mapping(VariableID n, VariableValue v) -> UnderlyingVariableID
+auto Proof::create_variable_value_mapping(const std::string & nn, VariableID n, VariableValue v) -> UnderlyingVariableID
 {
-    _imp->number_of_variables = UnderlyingVariableID{ int{ _imp->number_of_variables } + 1 };
-    _imp->vv_mapping.emplace(pair{ n, v }, _imp->number_of_variables);
-    return _imp->number_of_variables;
+    ++_imp->number_of_variables;
+    UnderlyingVariableID name{ _imp->numbered_variables ? to_string(_imp->number_of_variables) : nn + "_" + to_string(int{ v }) };
+    _imp->vv_mapping.emplace(pair{ n, v }, name);
+    return name;
 }
 
 auto Proof::create_anonymous_extra_variable() -> UnderlyingVariableID
 {
-    _imp->number_of_variables = UnderlyingVariableID{ int{ _imp->number_of_variables } + 1 };
-    _imp->vv_mapping.emplace(pair{ VariableID{ _imp->anonymous_variables++ }, 0 }, _imp->number_of_variables);
-    return _imp->number_of_variables;
+    ++_imp->number_of_variables;
+    UnderlyingVariableID name{ to_string(_imp->number_of_variables) };
+    _imp->vv_mapping.emplace(pair{ VariableID{ _imp->anonymous_variables++ }, 0 }, name);
+    return name;
 }
 
 auto Proof::variable_value_mapping(VariableID n, VariableValue v) const -> UnderlyingVariableID
