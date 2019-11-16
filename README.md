@@ -78,10 +78,10 @@ equal a 2
 
 Finally, to create lots of variables, you can do this:
 
-``
+```
 intvararray x 2 1 2 1 4 1 10
 equal x[2,4] 5
-``
+```
 
 This will create variables named ``x[1,1]`` through ``x[2,4]``, each with domains from 1 to 10. Note
 that currently, only 2d arrays (third argument) are supported. Also, the square bracket syntax is
