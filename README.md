@@ -18,13 +18,8 @@ Linux, and Xcode 10.2 on Mac OS X) and Boost (we use 1.65.1 or later, built with
 
 The tests for this project have two dependencies, which are also required for proof verification:
 
-* refpy from https://github.com/StephanGocht/refpy/ .
+* VeriPB from https://github.com/StephanGocht/VeriPB/ .
 * roundingsat from https://github.com/elffersj/roundingsat/ .
-
-Alternatively, you can use the following to verify proofs (in which case you can use the
-``--levels`` command line option to generate proofs that require less time and memory to verify):
-
-* prooflogging from https://github.com/elffersj/prooflogging .
 
 Modelling
 ---------

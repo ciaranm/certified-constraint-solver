@@ -82,7 +82,7 @@ auto Proof::operator= (Proof &&) -> Proof & = default;
 
 auto Proof::write_header() -> void
 {
-    proof_stream() << "pseudo Boolean proof version 1.0" << endl;
+    proof_stream() << "pseudo-Boolean proof version 1.0" << endl;
 
     _imp->opb_file << "* #variable= " << _imp->number_of_variables << " #constraint= " << _imp->model_constraints_line << endl;
      copy(istreambuf_iterator<char>{ _imp->opb_body_file }, istreambuf_iterator<char>{}, ostreambuf_iterator<char>{ _imp->opb_file });
