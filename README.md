@@ -103,19 +103,19 @@ To run the solver, and produce a proof of unsat (assuming the model actually is 
 ```
 
 This will write an equivalent pseudo-boolean model in OPB format to ``models/babyunsat.opb``, and a
-proof log to ``models/babyunsat.log``. These can then be verified using ``refpy``:
+proof log to ``models/babyunsat.log``. These can then be verified using ``veripb``:
 
 ```shell session
-refpy models/babyunsat.opb models/babyunsat.log
+veripb models/babyunsat.opb models/babyunsat.log
 ```
 
-You can find refpy at https://github.com/StephanGocht/refpy/ .
+You can find veripb at https://github.com/StephanGocht/VeriPB/ .
 
 Funding Acknowledgements
 ------------------------
 
 This work was supported by the Engineering and Physical Sciences Research Council (grant number
-EP/P026842/1), although they don't know that.
+EP/P026842/1).
 
 <!-- vim: set tw=100 spell spelllang=en : -->
 
