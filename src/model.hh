@@ -13,6 +13,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 class ModelError : public std::exception
